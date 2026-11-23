@@ -406,6 +406,113 @@ tbody tr:hover {
     color: #b23d3d;
 }
 
+.app-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: grid;
+    place-items: center;
+    padding: 20px;
+    background: rgba(15, 30, 46, 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+.app-dialog-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.app-dialog {
+    width: min(430px, 100%);
+    padding: 32px;
+    border: 1px solid rgba(18, 43, 66, 0.12);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow: 0 24px 70px rgba(8, 24, 44, 0.34);
+    text-align: center;
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.2s ease;
+}
+
+.app-dialog-backdrop.is-open .app-dialog {
+    transform: translateY(0) scale(1);
+}
+
+.app-dialog-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 18px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: #eaf3ff;
+    color: #1a6098;
+    font-size: 1.75rem;
+    line-height: 1;
+    font-weight: 800;
+    box-shadow: 0 8px 22px rgba(26, 96, 152, 0.12);
+}
+
+.app-dialog.success .app-dialog-icon {
+    background: #dff5ea;
+    color: #23825b;
+}
+
+.app-dialog.error .app-dialog-icon {
+    background: #fde5e5;
+    color: #b63b3b;
+}
+
+.app-dialog h2 {
+    margin: 0 0 10px;
+    color: #17375d;
+    font-size: 1.45rem;
+}
+
+.app-dialog-message {
+    margin: 0;
+    color: #526a82;
+    line-height: 1.65;
+    font-size: 0.98rem;
+}
+
+.app-dialog-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 26px;
+}
+
+.app-dialog-button {
+    min-width: 118px;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 20px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.app-dialog-button:hover {
+    transform: translateY(-1px);
+}
+
+.app-dialog-button-primary {
+    background: linear-gradient(135deg, #1a6098, #2d89c8);
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(26, 96, 152, 0.18);
+}
+
+.app-dialog-button-secondary {
+    background: #edf2f7;
+    color: #31526f;
+}
+
 .auth-shell {
     min-height: 100vh;
     display: grid;

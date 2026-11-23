@@ -117,7 +117,7 @@ protected void doPost(HttpServletRequest request, HttpServletResponse response)
 
         if (nomeRazao == null || nomeRazao.trim().isEmpty() || cpfCnpj == null || cpfCnpj.trim().isEmpty()) {
             request.setAttribute("mensagemErro", "Os campos Nome/Razão Social e CPF/CNPJ são obrigatórios!");
-            RequestDispatcher dispatcher = request.getRequestDispatcher("/formulario_cliente.jsp");
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/form_cliente.jsp");
             dispatcher.forward(request, response);
             return;
         }
@@ -155,19 +155,19 @@ protected void doPost(HttpServletRequest request, HttpServletResponse response)
             response.sendRedirect("gerenciar_cliente.do?acao=listarTodos");
         } else {
             request.setAttribute("mensagemErro", "Erro ao gravar no banco de dados. Verifique as informações.");
-            RequestDispatcher dispatcher = request.getRequestDispatcher("/formulario_cliente.jsp");
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/form_cliente.jsp");
             dispatcher.forward(request, response);
         }
 
     } catch (java.text.ParseException e) {
         e.printStackTrace();
         request.setAttribute("mensagemErro", "Formato de data inválido!");
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/formulario_cliente.jsp");
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/form_cliente.jsp");
         dispatcher.forward(request, response);
     } catch (Exception e) {
         e.printStackTrace();
         request.setAttribute("mensagemErro", "Ocorreu um erro ao processar o cliente: " + e.getMessage());
-        RequestDispatcher dispatcher = request.getRequestDispatcher("/formulario_cliente.jsp");
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/form_cliente.jsp");
         dispatcher.forward(request, response);
         }
     }
@@ -177,13 +177,15 @@ protected void doPost(HttpServletRequest request, HttpServletResponse response)
                 String link, HttpServletResponse response){
             try{
                 PrintWriter out = response.getWriter();
-                out.println("<script type='text/javascript'>");
-                out.println("alert('"+mensagem+"')");
+                out.println("<script src='js/app-dialog.js'></script>");
+                out.println("<script>");
+                out.println("appMessage('" + mensagem + "', {");
                 if(resposta){
-                    out.println("location.href='"+link+"'");
+                    out.println("type: 'success', redirect: '" + link + "'");
                 }else{
-                    out.println("history.back();");
+                    out.println("type: 'error', back: true");
                 }
+                out.println("});");
                 out.println("</script>");
                 out.close();
             }catch(Exception e){

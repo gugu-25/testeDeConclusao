@@ -26,9 +26,9 @@ public class UsuarioDAO extends DataBaseDAO{
         ArrayList<Usuario> lista = new ArrayList<>();
         String sql = "SELECT * FROM usuario";
         try{
-            //abre a conexao
+
             this.conectar();
-            //usando try-with-resource para PreparedStatement e ResultSet
+
             try(PreparedStatement pstm = conn.prepareStatement(sql);
                 ResultSet rs = pstm.executeQuery()){
                 while(rs.next()){

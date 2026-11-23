@@ -5,6 +5,7 @@ import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -43,6 +44,46 @@ public class GerenciarDiaria extends HttpServlet {
             
             if (acao == null) {
                 acao = "listarTodos";
+            }
+
+            if (acao.equals("listarTodos")) {
+                if (GerenciarLogin.verificarPermissao(request, response)) {
+                    DiariaDAO dDAO = new DiariaDAO();
+                    request.setAttribute("listarTodos", dDAO.getLista());
+                    RequestDispatcher dispatcher =
+                            getServletContext().getRequestDispatcher("/listar_diaria.jsp");
+                    dispatcher.forward(request, response);
+                }
+                return;
+            }
+
+            if (acao.equals("desativar")) {
+                if (GerenciarLogin.verificarPermissao(request, response)) {
+                    DiariaDAO dDAO = new DiariaDAO();
+                    Diaria diaria = new Diaria();
+                    diaria.setIdDiaria(Integer.parseInt(request.getParameter("idDiaria")));
+                    if (dDAO.desativar(diaria)) {
+                        exibirMensagem("Diária desativada com sucesso!",
+                                "gerenciar_diaria.do?acao=listarTodos", response);
+                    } else {
+                        exibirMensagem("Não foi possível desativar a diária.", null, response);
+                    }
+                }
+                return;
+            }
+
+            if (acao.equals("alterar")) {
+                if (GerenciarLogin.verificarPermissao(request, response)) {
+                    int idDiaria = Integer.parseInt(request.getParameter("idDiaria"));
+                    Diaria diaria = new DiariaDAO().getCarregaPorID(idDiaria);
+                    if (diaria.getIdDiaria() > 0) {
+                        sessao.setAttribute("diaria", diaria);
+                        response.sendRedirect("form_finalizar_diaria.jsp");
+                    } else {
+                        exibirMensagem("Diária não encontrada.", null, response);
+                    }
+                }
+                return;
             }
             
             if (acao.equals("novaDiaria")) {
@@ -120,8 +161,15 @@ public class GerenciarDiaria extends HttpServlet {
                     }
 
                     d.setDescricao(request.getParameter("descricao"));
-                    d.setValorDiaria(Double.parseDouble(request.getParameter("valorDiaria").replace(",", ".")));
-                    d.setValorTotal(Double.parseDouble(request.getParameter("valorTotal").replace(",", ".")));
+                    double valorDiaria = Double.parseDouble(request.getParameter("valorDiaria").replace(",", "."));
+                    double valorTotal = Double.parseDouble(request.getParameter("valorTotal").replace(",", "."));
+                    if (Double.isNaN(valorDiaria) || Double.isInfinite(valorDiaria) || valorDiaria < 0
+                            || Double.isNaN(valorTotal) || Double.isInfinite(valorTotal) || valorTotal < 0) {
+                        exibirMensagem("Os valores da diária não podem ser negativos.", null, response);
+                        return;
+                    }
+                    d.setValorDiaria(valorDiaria);
+                    d.setValorTotal(valorTotal);
                     d.setStatusHospedagem(Integer.parseInt(request.getParameter("statusHospedagem")));
                     d.setStatusPagamento(Integer.parseInt(request.getParameter("statusPagamento")));
 
@@ -165,13 +213,15 @@ public class GerenciarDiaria extends HttpServlet {
         try {
             response.setContentType("text/html;charset=UTF-8");
             PrintWriter out = response.getWriter();
-            out.println("<script type='text/javascript'>");
-            out.println("alert('" + mensagem + "');");
+            out.println("<script src='js/app-dialog.js'></script>");
+            out.println("<script>");
+            out.println("appMessage('" + mensagem + "', {");
             if (linkRedirecionamento != null && !linkRedirecionamento.isEmpty()) {
-                out.println("location.href='" + linkRedirecionamento + "';");
+                out.println("type: 'success', redirect: '" + linkRedirecionamento + "'");
             } else {
-                out.println("history.back();");
+                out.println("type: 'error', back: true");
             }
+            out.println("});");
             out.println("</script>");
             out.close();
         } catch (Exception e) {

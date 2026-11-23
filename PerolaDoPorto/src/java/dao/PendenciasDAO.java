@@ -15,7 +15,18 @@ public class PendenciasDAO extends DataBaseDAO {
 
     public ArrayList<Pendencias> getLista() {
         ArrayList<Pendencias> lista = new ArrayList<>();
-        String sql = "SELECT * FROM pendencias";
+        String sql = "SELECT p.*, dqs.diaria_idDiaria AS diariaId, "
+                   + "dqs.quarto_idQuarto AS quartoId, dqs.servico_idServico AS servicoId, "
+                   + "c.nomeRazao AS nomeCliente, q.numero AS numeroQuarto, s.nome AS nomeServico "
+                   + "FROM pendencias p "
+                   + "LEFT JOIN diaria_quarto_servico dqs "
+                   + "ON dqs.diaria_idDiaria = p.diaria_quarto_servico_diaria_quarto_diaria_idDiaria "
+                   + "AND dqs.quarto_idQuarto = p.diaria_quarto_servico_diaria_quarto_idQuarto "
+                   + "AND dqs.servico_idServico = p.diaria_quarto_servico_servico_idServico "
+                   + "LEFT JOIN diaria d ON d.idDiaria = dqs.diaria_idDiaria "
+                   + "LEFT JOIN cliente c ON c.idCliente = d.cliente_idCliente "
+                   + "LEFT JOIN quarto q ON q.idQuarto = dqs.quarto_idQuarto "
+                   + "LEFT JOIN servico s ON s.idServico = dqs.servico_idServico";
         try {
             this.conectar();
             try (PreparedStatement pstm = conn.prepareStatement(sql);
@@ -34,9 +45,14 @@ public class PendenciasDAO extends DataBaseDAO {
                     Quarto quarto = new Quarto();
                     Servico servico = new Servico();
                     
-                    diaria.setIdDiaria(rs.getInt("diaria_quarto_servico_diaria_quarto_diaria_idDiaria"));
-                    quarto.setIdQuarto(rs.getInt("diaria_quarto_servico_diaria_quarto_idQuarto"));
-                    servico.setIdServico(rs.getInt("diaria_quarto_servico_servico_idServico"));
+                    diaria.setIdDiaria(rs.getInt("diariaId"));
+                    Cliente cliente = new Cliente();
+                    cliente.setNomeRazao(rs.getString("nomeCliente"));
+                    diaria.setCliente(cliente);
+                    quarto.setIdQuarto(rs.getInt("quartoId"));
+                    quarto.setNumero(rs.getInt("numeroQuarto"));
+                    servico.setIdServico(rs.getInt("servicoId"));
+                    servico.setNome(rs.getString("nomeServico"));
                     
                     dq.setDiaria(diaria);
                     dq.setQuarto(quarto);

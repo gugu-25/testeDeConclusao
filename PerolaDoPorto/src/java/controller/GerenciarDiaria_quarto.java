@@ -67,7 +67,7 @@ public class GerenciarDiaria_quarto extends HttpServlet {
                         }
                         
                         if (dqDAO.desvincular(idDiaria, idQuarto)) {
-                            exibirMensagem("Desvinculado com sucesso", true, "gerenciarDiaria_quarto?acao=gerenciar&idDiaria=" + idDiariaStr, response);
+                            exibirMensagem("Desvinculado com sucesso", true, "gerenciar_diaria_quarto.do?acao=gerenciar&idDiaria=" + idDiariaStr, response);
                         } else {
                             exibirMensagem("Erro ao desvincular", false, "", response);
                         }
@@ -108,7 +108,11 @@ public class GerenciarDiaria_quarto extends HttpServlet {
             } else {
                 int idQuarto = Integer.parseInt(idQuartoStr);
                 int idDiaria = Integer.parseInt(idDiariaStr);
-                double valorAtual = Double.parseDouble(valorAtualStr.replace(",", "."));  
+                double valorAtual = Double.parseDouble(valorAtualStr.replace(",", "."));
+                if (Double.isNaN(valorAtual) || Double.isInfinite(valorAtual) || valorAtual < 0) {
+                    exibirMensagem("O valor do quarto não pode ser negativo", false, "", response);
+                    return;
+                }
                 
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
                 Date checkIn = null;
@@ -123,7 +127,7 @@ public class GerenciarDiaria_quarto extends HttpServlet {
                 }
                 
                 if (dqDAO.vincular(idDiaria, idQuarto, valorAtual, checkIn, checkOut)) {
-                    exibirMensagem("Vinculado com sucesso", true, "gerenciarDiaria_quarto?acao=gerenciar&idDiaria=" + idDiariaStr, response);
+                    exibirMensagem("Vinculado com sucesso", true, "gerenciar_diaria_quarto.do?acao=gerenciar&idDiaria=" + idDiariaStr, response);
                 } else {
                     exibirMensagem("Erro ao vincular", false, "", response);
                 }
@@ -140,13 +144,15 @@ public class GerenciarDiaria_quarto extends HttpServlet {
             try{
                 response.setContentType("text/html;charset=UTF-8");
                 PrintWriter out = response.getWriter();
-                out.println("<script type='text/javascript'>");
-                out.println("alert('"+mensagem+"')");
+                out.println("<script src='js/app-dialog.js'></script>");
+                out.println("<script>");
+                out.println("appMessage('" + mensagem + "', {");
                 if(resposta){
-                    out.println("location.href='"+link+"'");
+                    out.println("type: 'success', redirect: '" + link + "'");
                 }else{
-                    out.println("history.back();");
+                    out.println("type: 'error', back: true");
                 }
+                out.println("});");
                 out.println("</script>");
                 out.close();
             }catch(Exception e){

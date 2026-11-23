@@ -7,11 +7,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Quartos</title>
         <link rel="stylesheet" href="css/estilo.css">
+        <script src="js/app-dialog.js"></script>
         <script>
             function confirmarExclusao(idQuarto, numero) {
-                if (confirm('Deseja realmente desativar o quarto ' + numero + '?')) {
-                    window.open('gerenciar_quarto.do?acao=desativar&idQuarto=' + idQuarto, '_self');
-                }
+                appConfirm(
+                    'Deseja realmente desativar o quarto ' + numero + '?',
+                    function () {
+                        window.location.href = 'gerenciar_quarto.do?acao=desativar&idQuarto=' + idQuarto;
+                    },
+                    {
+                        title: 'Desativar quarto',
+                        type: 'error',
+                        confirmText: 'Desativar',
+                        cancelText: 'Cancelar'
+                    }
+                );
             }
         </script>
     </head>
@@ -25,7 +35,9 @@
                     <div>
                         <h2>Lista de Quartos</h2>
                     </div>
-                    <a href="gerenciar_quarto.do?acao=novo" class="btn btn-primary">Novo cadastro</a>
+                    <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                        <a href="gerenciar_quarto.do?acao=novo" class="btn btn-primary">Novo cadastro</a>
+                    </c:if>
                 </div>
 
                 <c:choose>
@@ -64,7 +76,9 @@
                                             </td>
                                             <td>
                                                 <a href="gerenciar_quarto.do?acao=alterar&idQuarto=${q.idQuarto}" class="btn btn-primary">Editar</a>
-                                                <button class="btn btn-danger" onclick="confirmarExclusao(${q.idQuarto}, '${q.numero}')">Desativar</button>
+                                                <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                                                    <button class="btn btn-danger" onclick="confirmarExclusao(${q.idQuarto}, '${q.numero}')">Desativar</button>
+                                                </c:if>
                                             </td>
                                         </tr>
                                     </c:forEach>

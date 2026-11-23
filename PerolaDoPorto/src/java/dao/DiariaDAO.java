@@ -114,8 +114,9 @@ public class DiariaDAO extends DataBaseDAO {
     
     public boolean gravar(Diaria d) {
         boolean sucesso = false;
+        boolean novaDiaria = d.getIdDiaria() == 0;
         String sql;
-        if (d.getIdDiaria() == 0) {
+        if (novaDiaria) {
             sql = "INSERT INTO diaria(valorDiaria, descricao, statusHospedagem, valorTotal, statusPagamento, feitoEm, pagoEm, usuario_idUsuario, cliente_idCliente, pendencias_idPendencias) VALUES(?,?,?,?,?,?,?,?,?,?)";
         } else {
             sql = "UPDATE diaria SET valorDiaria=?, descricao=?, statusHospedagem=?, valorTotal=?, statusPagamento=?, feitoEm=?, pagoEm=?, usuario_idUsuario=?, cliente_idCliente=?, pendencias_idPendencias=? WHERE idDiaria=?";
@@ -160,7 +161,7 @@ public class DiariaDAO extends DataBaseDAO {
                 if (rowsAffected > 0) {
                     sucesso = true;
                     
-                    if (d.getIdDiaria() == 0) {
+                    if (novaDiaria) {
                         try (ResultSet rs = pstm.getGeneratedKeys()) {
                             if (rs.next()) {
                                 d.setIdDiaria(rs.getInt(1)); 
@@ -168,7 +169,7 @@ public class DiariaDAO extends DataBaseDAO {
                         }
                     }
                     
-                    if (d.getCarrinhoQuarto() != null && !d.getCarrinhoQuarto().isEmpty()) {
+                    if (novaDiaria && d.getCarrinhoQuarto() != null && !d.getCarrinhoQuarto().isEmpty()) {
                         DiariaQuartoDAO dqDAO = new DiariaQuartoDAO();
                         
                         for (DiariaQuarto item : d.getCarrinhoQuarto()) {

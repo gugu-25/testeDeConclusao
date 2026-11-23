@@ -7,11 +7,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Usuários</title>
         <link rel="stylesheet" href="css/estilo.css">
+        <script src="js/app-dialog.js"></script>
         <script>
             function confirmarExclusao(idUsuario, nome) {
-                if (confirm('Deseja realmente desativar o usuário ' + nome + '?')) {
-                    window.open('gerenciar_usuario.do?acao=desativar&idUsuario=' + idUsuario, '_self');
-                }
+                appConfirm(
+                    'Deseja realmente desativar o usuário ' + nome + '?',
+                    function () {
+                        window.location.href = 'gerenciar_usuario.do?acao=desativar&idUsuario=' + idUsuario;
+                    },
+                    {
+                        title: 'Desativar usuário',
+                        type: 'error',
+                        confirmText: 'Desativar',
+                        cancelText: 'Cancelar'
+                    }
+                );
             }
         </script>
     </head>
@@ -25,7 +35,9 @@
                     <div>
                         <h2>Lista de Usuários</h2>
                     </div>
-                    <a href="form_usuario.jsp" class="btn btn-primary">Novo cadastro</a>
+                    <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                        <a href="form_usuario.jsp" class="btn btn-primary">Novo cadastro</a>
+                    </c:if>
                 </div>
 
                 <c:choose>
@@ -39,7 +51,9 @@
                                         <th>Login</th>
                                         <th>Perfil</th>
                                         <th>Status</th>
-                                        <th>Opções</th>
+                                        <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                                            <th>Opções</th>
+                                        </c:if>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -55,10 +69,12 @@
                                                     <c:if test="${u.status==2}">Inativo</c:if>
                                                 </span>
                                             </td>
-                                            <td>
-                                                <a href="gerenciar_usuario.do?acao=alterar&idUsuario=${u.idUsuario}" class="btn btn-primary">Editar</a>
-                                                <button class="btn btn-danger" onclick="confirmarExclusao(${u.idUsuario}, '${u.nome}')">Desativar</button>
-                                            </td>
+                                            <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                                                <td>
+                                                    <a href="gerenciar_usuario.do?acao=alterar&idUsuario=${u.idUsuario}" class="btn btn-primary">Editar</a>
+                                                    <button class="btn btn-danger" onclick="confirmarExclusao(${u.idUsuario}, '${u.nome}')">Desativar</button>
+                                                </td>
+                                            </c:if>
                                         </tr>
                                     </c:forEach>
                                 </tbody>
@@ -71,7 +87,9 @@
                             <span class="eyebrow">Equipe</span>
                             <h3>Convide sua equipe para começar</h3>
                             <p>Crie o primeiro usuário para organizar os acessos ao sistema da pousada.</p>
-                            <a href="form_usuario.jsp" class="btn btn-primary">Cadastrar um usuário <span aria-hidden="true"></span></a>
+                            <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                                <a href="form_usuario.jsp" class="btn btn-primary">Cadastrar um usuário <span aria-hidden="true"></span></a>
+                            </c:if>
                         </section>
                     </c:otherwise>
                 </c:choose>

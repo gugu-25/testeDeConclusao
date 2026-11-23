@@ -1,4 +1,5 @@
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
+<script src="js/app-dialog.js"></script>
 <div class="topbar">
     <div class="brand">
         <div class="brand-mark">P</div>

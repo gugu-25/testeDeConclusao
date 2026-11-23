@@ -21,6 +21,14 @@
 
                     <form method="POST" action="gerenciar_servico.do">
                         <input type="hidden" name="idServico" id="idServico" value="${servico.idServico}"/>
+                        <c:choose>
+                            <c:when test="${servico.idServico > 0}">
+                                <input type="hidden" name="acao" value="alterar"/>
+                            </c:when>
+                            <c:otherwise>
+                                <input type="hidden" name="acao" value="cadastrar"/>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="form-grid">
                             <div class="form-field full">
@@ -30,7 +38,7 @@
 
                             <div class="form-field">
                                 <label for="valor">Valor</label>
-                                <input type="number" step="0.01" name="valor" id="valor" value="${servico.valor}" required/>
+                                <input type="number" min="0" step="0.01" name="valor" id="valor" value="${servico.valor}" required/>
                             </div>
 
                             <div class="form-field">

@@ -4,6 +4,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,6 +52,91 @@ public class DiariaQuartoServicoDAO extends DataBaseDAO {
             }
         } catch (SQLException e) {
             Logger.getLogger(DiariaQuartoServicoDAO.class.getName()).log(Level.SEVERE, null, e);
+        } finally {
+            this.desconectar();
+        }
+        return sucesso;
+    }
+
+    public boolean adicionarEmConta(int idDiaria, int idQuarto, List<Integer> idsServico) {
+        if (idsServico == null || idsServico.isEmpty()) {
+            return false;
+        }
+
+        boolean sucesso = false;
+        String disponibilidadeSql = "SELECT s.nome, s.valor FROM servico s "
+                + "WHERE s.idServico=? AND s.status=1 "
+                + "AND NOT EXISTS (SELECT 1 FROM diaria_quarto_servico dqs "
+                + "WHERE dqs.diaria_idDiaria=? AND dqs.quarto_idQuarto=? "
+                + "AND dqs.servico_idServico=s.idServico)";
+        String vincularSql = "INSERT INTO diaria_quarto_servico "
+                + "(diaria_idDiaria, quarto_idQuarto, servico_idServico, valorServicoAtual) "
+                + "VALUES(?,?,?,?)";
+        String pendenciaSql = "INSERT INTO pendencias "
+                + "(descricao, valor, dataRegistro, status, "
+                + "diaria_quarto_servico_diaria_quarto_diaria_idDiaria, "
+                + "diaria_quarto_servico_diaria_quarto_idQuarto, "
+                + "diaria_quarto_servico_servico_idServico) "
+                + "VALUES(?,?,CURRENT_DATE(),1,?,?,?)";
+
+        try {
+            this.conectar();
+            conn.setAutoCommit(false);
+            try (PreparedStatement disponibilidade = conn.prepareStatement(disponibilidadeSql);
+                 PreparedStatement vincular = conn.prepareStatement(vincularSql);
+                 PreparedStatement criarPendencia = conn.prepareStatement(pendenciaSql)) {
+                for (Integer idServico : idsServico) {
+                    if (idServico == null || idServico <= 0) {
+                        throw new SQLException("ID de serviço inválido no carrinho");
+                    }
+
+                    disponibilidade.setInt(1, idServico);
+                    disponibilidade.setInt(2, idDiaria);
+                    disponibilidade.setInt(3, idQuarto);
+                    String nomeServico;
+                    double valorServico;
+                    try (ResultSet rs = disponibilidade.executeQuery()) {
+                        if (!rs.next()) {
+                            throw new SQLException("Serviço indisponível para esta diária");
+                        }
+                        nomeServico = rs.getString("nome");
+                        valorServico = rs.getDouble("valor");
+                    }
+                    if (Double.isNaN(valorServico) || Double.isInfinite(valorServico) || valorServico < 0) {
+                        throw new SQLException("O valor do serviço não pode ser negativo");
+                    }
+
+                    vincular.setInt(1, idDiaria);
+                    vincular.setInt(2, idQuarto);
+                    vincular.setInt(3, idServico);
+                    vincular.setDouble(4, valorServico);
+                    if (vincular.executeUpdate() != 1) {
+                        throw new SQLException("Não foi possível vincular o serviço à diária");
+                    }
+
+                    criarPendencia.setString(1, "Serviço: " + nomeServico);
+                    criarPendencia.setDouble(2, valorServico);
+                    criarPendencia.setInt(3, idDiaria);
+                    criarPendencia.setInt(4, idQuarto);
+                    criarPendencia.setInt(5, idServico);
+                    if (criarPendencia.executeUpdate() != 1) {
+                        throw new SQLException("Não foi possível lançar o serviço como pendência");
+                    }
+                }
+            }
+            conn.commit();
+            sucesso = true;
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    Logger.getLogger(DiariaQuartoServicoDAO.class.getName())
+                            .log(Level.SEVERE, "Falha ao desfazer a inclusão dos serviços", rollbackError);
+                }
+            }
+            Logger.getLogger(DiariaQuartoServicoDAO.class.getName())
+                    .log(Level.SEVERE, "Falha ao adicionar serviços à conta da diária", e);
         } finally {
             this.desconectar();
         }

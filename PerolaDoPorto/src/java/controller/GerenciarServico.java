@@ -147,9 +147,14 @@ public class GerenciarServico extends HttpServlet {
                 }
             }
             
-            if (valorStr != null && !valorStr.isEmpty()) {
+            if (valorStr == null || valorStr.trim().isEmpty()) {
+                erros.add("O valor do serviço é obrigatório");
+            } else {
                 try {
-                    valor = Double.parseDouble(valorStr.replace(".", "").replace(",", "."));
+                    valor = Double.parseDouble(valorStr.replace(",", "."));
+                    if (Double.isNaN(valor) || Double.isInfinite(valor) || valor < 0) {
+                        erros.add("O valor do serviço não pode ser negativo");
+                    }
                 } catch (NumberFormatException n) {
                     erros.add("Valor do serviço inválido");
                 }
@@ -190,13 +195,15 @@ public class GerenciarServico extends HttpServlet {
                 String link, HttpServletResponse response) {
             try {
                 PrintWriter out = response.getWriter();
-                out.println("<script type='text/javascript'>");
-                out.println("alert('" + mensagem + "')");
+                out.println("<script src='js/app-dialog.js'></script>");
+                out.println("<script>");
+                out.println("appMessage('" + mensagem + "', {");
                 if (resposta) {
-                    out.println("location.href='" + link + "'");
+                    out.println("type: 'success', redirect: '" + link + "'");
                 } else {
-                    out.println("history.back();");
+                    out.println("type: 'error', back: true");
                 }
+                out.println("});");
                 out.println("</script>");
                 out.close();
             } catch (Exception e) {

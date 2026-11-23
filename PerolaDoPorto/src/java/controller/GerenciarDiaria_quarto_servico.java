@@ -7,6 +7,8 @@ package controller;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import javax.servlet.http.HttpSession;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -14,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.DiariaQuartoServico;
 import model.DiariaQuartoServicoDAO;
+import model.Servico;
 
 /**
  *
@@ -53,11 +56,28 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
                         DiariaQuartoServico dqs = dqsDAO.getCarregaServicosPorDiariaQuarto(idDiaria, idQuarto);
                         
                         if (idDiaria > 0 && idQuarto > 0) {
+                            HttpSession session = request.getSession();
+                            String chaveCarrinho = chaveCarrinho(idDiaria, idQuarto);
+                            ArrayList<Integer> idsCarrinho = lerCarrinho(session, chaveCarrinho);
+                            ArrayList<Integer> idsDisponiveis = new ArrayList<>();
+                            ArrayList<Servico> servicosCarrinho = new ArrayList<>();
+                            double totalCarrinho = 0;
+                            for (Servico servico : dqs.getServicosNaoVinculados()) {
+                                if (idsCarrinho.contains(servico.getIdServico())) {
+                                    idsDisponiveis.add(servico.getIdServico());
+                                    servicosCarrinho.add(servico);
+                                    totalCarrinho += servico.getValor();
+                                }
+                            }
+                            session.setAttribute(chaveCarrinho, idsDisponiveis);
                             RequestDispatcher disp = 
                                     getServletContext().getRequestDispatcher("/form_diaria_quarto_servico.jsp");
                             request.setAttribute("diaria_quarto_servico", dqs);
                             request.setAttribute("idDiaria", idDiaria);
                             request.setAttribute("idQuarto", idQuarto);
+                            request.setAttribute("carrinhoServicos", servicosCarrinho);
+                            request.setAttribute("quantidadeCarrinho", servicosCarrinho.size());
+                            request.setAttribute("totalCarrinho", totalCarrinho);
                             disp.forward(request, response);
                         } else {
                             exibirMensagem("Diária ou Quarto não encontrados", false, "", response);
@@ -85,7 +105,7 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
                             }
                             
                             if (dqsDAO.desvincular(idDiaria, idQuarto, idServico)) {
-                                exibirMensagem("Desvinculado com sucesso", true, "gerenciarDiaria_quarto_servico?acao=gerenciar&idDiaria=" + idDiariaStr + "&idQuarto=" + idQuartoStr, response);
+                                exibirMensagem("Desvinculado com sucesso", true, "gerenciar_diaria_quarto_servico.do?acao=gerenciar&idDiaria=" + idDiariaStr + "&idQuarto=" + idQuartoStr, response);
                             } else {
                                 exibirMensagem("Erro ao desvincular", false, "", response);
                             }
@@ -120,46 +140,100 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
         String idDiariaStr = request.getParameter("idDiaria");
         String idQuartoStr = request.getParameter("idQuarto");
         String idServicoStr = request.getParameter("idServico");
-        String valorServicoAtualStr = request.getParameter("valorServicoAtual");
+        String carrinhoAcao = request.getParameter("carrinhoAcao");
         
         try {
             DiariaQuartoServicoDAO dqsDAO = new DiariaQuartoServicoDAO();
-            
-            if (idDiariaStr == null || idDiariaStr.isEmpty() ||
-                idQuartoStr == null || idQuartoStr.isEmpty() ||
-                idServicoStr == null || idServicoStr.isEmpty() || 
-                valorServicoAtualStr == null || valorServicoAtualStr.isEmpty()) {
-                exibirMensagem("Campos obrigatórios devem ser preenchidos", false, "", response);
-            } else {
-                int idDiaria = Integer.parseInt(idDiariaStr);
-                int idQuarto = Integer.parseInt(idQuartoStr);
-                int idServico = Integer.parseInt(idServicoStr);
-                double valorServicoAtual = Double.parseDouble(valorServicoAtualStr.replace(",", ".")); // Previne erro com vírgula no double
-                
-                if (dqsDAO.vincular(idDiaria, idQuarto, idServico, valorServicoAtual)) {
-                    exibirMensagem("Vinculado com sucesso", true, "gerenciarDiaria_quarto_servico?acao=gerenciar&idDiaria=" + idDiariaStr + "&idQuarto=" + idQuartoStr, response);
-                } else {
-                    exibirMensagem("Erro ao vincular", false, "", response);
-                }
+            if (idDiariaStr == null || idDiariaStr.trim().isEmpty()
+                    || idQuartoStr == null || idQuartoStr.trim().isEmpty()) {
+                exibirMensagem("Diária e quarto são obrigatórios", false, "", response);
+                return;
             }
-        
+            int idDiaria = Integer.parseInt(idDiariaStr);
+            int idQuarto = Integer.parseInt(idQuartoStr);
+            String redirect = "gerenciar_diaria_quarto_servico.do?acao=gerenciar&idDiaria="
+                    + idDiaria + "&idQuarto=" + idQuarto;
+            HttpSession session = request.getSession();
+            String chaveCarrinho = chaveCarrinho(idDiaria, idQuarto);
+            ArrayList<Integer> idsCarrinho = lerCarrinho(session, chaveCarrinho);
+
+            if ("adicionar".equals(carrinhoAcao)) {
+                int idServico = Integer.parseInt(idServicoStr);
+                DiariaQuartoServico dqs = dqsDAO.getCarregaServicosPorDiariaQuarto(idDiaria, idQuarto);
+                boolean disponivel = false;
+                for (Servico servico : dqs.getServicosNaoVinculados()) {
+                    if (servico.getIdServico() == idServico) {
+                        disponivel = true;
+                        break;
+                    }
+                }
+                if (!disponivel) {
+                    exibirMensagem("Esse serviço não está disponível para o quarto", false, "", response);
+                    return;
+                }
+                if (!idsCarrinho.contains(idServico)) {
+                    idsCarrinho.add(idServico);
+                    session.setAttribute(chaveCarrinho, idsCarrinho);
+                }
+                exibirMensagem("Serviço adicionado ao carrinho", true, redirect, response);
+            } else if ("remover".equals(carrinhoAcao)) {
+                int idServico = Integer.parseInt(idServicoStr);
+                if (!idsCarrinho.remove(Integer.valueOf(idServico))) {
+                    exibirMensagem("Serviço não encontrado no carrinho", false, "", response);
+                    return;
+                }
+                session.setAttribute(chaveCarrinho, idsCarrinho);
+                exibirMensagem("Serviço removido do carrinho", true, redirect, response);
+            } else if ("confirmar".equals(carrinhoAcao)) {
+                if (idsCarrinho.isEmpty()) {
+                    exibirMensagem("Adicione pelo menos um serviço ao carrinho", false, "", response);
+                    return;
+                }
+                if (dqsDAO.adicionarEmConta(idDiaria, idQuarto, idsCarrinho)) {
+                    session.removeAttribute(chaveCarrinho);
+                    exibirMensagem("Serviços adicionados à conta e às pendências", true, redirect, response);
+                } else {
+                    exibirMensagem("Não foi possível adicionar os serviços à conta", false, "", response);
+                }
+            } else {
+                exibirMensagem("Ação de carrinho inválida", false, "", response);
+            }
         } catch (Exception e) {
             out.print(e);
             exibirMensagem("Erro ao processar dados ou acessar o banco", false, "", response);
         }
+    }
+
+    private String chaveCarrinho(int idDiaria, int idQuarto) {
+        return "carrinhoServicos_" + idDiaria + "_" + idQuarto;
+    }
+
+    private ArrayList<Integer> lerCarrinho(HttpSession session, String chaveCarrinho) {
+        ArrayList<Integer> itens = new ArrayList<>();
+        Object atual = session.getAttribute(chaveCarrinho);
+        if (atual instanceof ArrayList<?>) {
+            for (Object item : (ArrayList<?>) atual) {
+                if (item instanceof Integer && (Integer) item > 0) {
+                    itens.add((Integer) item);
+                }
+            }
+        }
+        return itens;
     }
     
      private static void 
         exibirMensagem(String mensagem, boolean resposta, String link, HttpServletResponse response){
             try{
                 PrintWriter out = response.getWriter();
-                out.println("<script type='text/javascript'>");
-                out.println("alert('"+mensagem+"')");
+                out.println("<script src='js/app-dialog.js'></script>");
+                out.println("<script>");
+                out.println("appMessage('" + mensagem + "', {");
                 if(resposta){
-                    out.println("location.href='"+link+"'");
+                    out.println("type: 'success', redirect: '" + link + "'");
                 }else{
-                    out.println("history.back();");
+                    out.println("type: 'error', back: true");
                 }
+                out.println("});");
                 out.println("</script>");
                 out.close();
             }catch(Exception e){

@@ -21,6 +21,14 @@
 
                     <form method="POST" action="gerenciar_cliente.do">
                         <input type="hidden" name="idCliente" id="idCliente" value="${cliente.idCliente}"/>
+                        <c:choose>
+                            <c:when test="${cliente.idCliente > 0}">
+                                <input type="hidden" name="acao" value="alterar"/>
+                            </c:when>
+                            <c:otherwise>
+                                <input type="hidden" name="acao" value="cadastrar"/>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="form-grid">
                             <div class="form-field full">

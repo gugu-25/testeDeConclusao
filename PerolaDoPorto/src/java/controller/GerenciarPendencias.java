@@ -43,14 +43,10 @@ public class GerenciarPendencias extends HttpServlet {
             if (acao.equals("listarTodos")) {
                 if (GerenciarLogin.verificarPermissao(request, response)) {
                     ArrayList<Pendencias> listarTodos = pDAO.getLista();
-                    if (listarTodos.size() > 0) {
-                        RequestDispatcher disp = 
-                                getServletContext().getRequestDispatcher("/listar_pendencias.jsp");
-                        request.setAttribute("listarTodos", listarTodos);
-                        disp.forward(request, response);
-                    } else {
-                        exibirMensagem("Lista de pendências vazia", true, "form_pendencias.jsp", response);
-                    }
+                    RequestDispatcher disp =
+                            getServletContext().getRequestDispatcher("/listar_pendencias.jsp");
+                    request.setAttribute("listarTodos", listarTodos);
+                    disp.forward(request, response);
                 } else {
                     exibirMensagem("Acesso negado", false, "", response);
                 }
@@ -138,9 +134,14 @@ public class GerenciarPendencias extends HttpServlet {
                 }
             }
             
-            if (valorStr != null && !valorStr.trim().isEmpty()) {
+            if (valorStr == null || valorStr.trim().isEmpty()) {
+                erros.add("O valor é obrigatório");
+            } else {
                 try {
-                    valor = Double.parseDouble(valorStr.replace(".", "").replace(",", "."));
+                    valor = Double.parseDouble(valorStr.replace(",", "."));
+                    if (Double.isNaN(valor) || Double.isInfinite(valor) || valor < 0) {
+                        erros.add("O valor não pode ser negativo");
+                    }
                 } catch (NumberFormatException n) {
                     erros.add("Valor inválido");
                 }
@@ -242,13 +243,15 @@ public class GerenciarPendencias extends HttpServlet {
         try {
             response.setContentType("text/html;charset=UTF-8");
             PrintWriter out = response.getWriter();
-            out.println("<script type='text/javascript'>");
-            out.println("alert('" + mensagem + "');");
+            out.println("<script src='js/app-dialog.js'></script>");
+            out.println("<script>");
+            out.println("appMessage('" + mensagem + "', {");
             if (resposta) {
-                out.println("location.href='" + link + "';");
+                out.println("type: 'success', redirect: '" + link + "'");
             } else {
-                out.println("history.back();");
+                out.println("type: 'error', back: true");
             }
+            out.println("});");
             out.println("</script>");
             out.close();
         } catch (Exception e) {

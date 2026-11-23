@@ -51,8 +51,11 @@ public class GerenciarLogin extends HttpServlet {
             throws ServletException, IOException {
         
         GerenciarLogin.response=response;
-        request.getSession().removeAttribute("ulogado");
-        response.sendRedirect("form_login.jsp");
+        HttpSession sessao = request.getSession(false);
+        if (sessao != null) {
+            sessao.invalidate();
+        }
+        response.sendRedirect(request.getContextPath() + "/form_login.jsp");
         
     }
 
@@ -97,8 +100,14 @@ public class GerenciarLogin extends HttpServlet {
             return;
         }
 
-        if (u.getIdUsuario() > 0 && u.getSenha().equals(senha)) {
-            HttpSession sessao = request.getSession();
+        if (u.getIdUsuario() > 0 && u.getStatus() == 1
+                && u.getPerfil() != null && u.getPerfil().getStatus() == 1
+                && u.getSenha().equals(senha)) {
+            HttpSession sessao = request.getSession(false);
+            if (sessao != null) {
+                sessao.invalidate();
+            }
+            sessao = request.getSession(true);
             sessao.setAttribute("ulogado", u);
             response.sendRedirect(request.getContextPath() + "/index.jsp");
         } else {
@@ -115,9 +124,9 @@ public class GerenciarLogin extends HttpServlet {
     private static void exibirMensagem(String mensagem){
             try{
                 PrintWriter out = response.getWriter();
-                out.println("<script type='text/javascript'>");
-                out.println("alert('"+mensagem+"')");
-                out.println("history.back();");
+                out.println("<script src='js/app-dialog.js'></script>");
+                out.println("<script>");
+                out.println("appMessage('" + mensagem + "', {type: 'error', back: true});");
                 out.println("</script>");
                 out.close();
             }catch(Exception e){
@@ -127,49 +136,12 @@ public class GerenciarLogin extends HttpServlet {
     
     public static Usuario verificarAcesso(HttpServletRequest request,
             HttpServletResponse response){
-    
-        Usuario u = null;
-        GerenciarLogin.response= response;
-        try{
-            HttpSession sessao = request.getSession();
-            if(sessao.getAttribute("ulogado")==null){
-                response.sendRedirect("form_login.jsp");
-            }else{
-                String uri = request.getRequestURI();
-                String queryString = request.getQueryString();
-                if(queryString!=null){
-                    uri += "?" +queryString;
-                }
-                u = (Usuario) request.getSession().getAttribute("ulogado");
-                if(u==null){
-                    sessao.setAttribute("mensagem", "Você não está autenticado");
-                    response.sendRedirect("form_login.jsp");
-                }else{
-                    if (u.getPerfil() == null || u.getPerfil().getMenus() == null || u.getPerfil().getMenus().getMenusVinculados() == null || u.getPerfil().getMenus().getMenusVinculados().isEmpty()) {
-                        return u;
-                    }
-
-                    if (paginaPublica(uri)) {
-                        return u;
-                    }
-
-                    boolean possuiAcesso = false;
-                    for(Menu m: u.getPerfil().getMenus().getMenusVinculados()){
-                        if(m != null && m.getLink() != null && uri.contains(m.getLink())){
-                            possuiAcesso = true;
-                            break;
-                        }
-                    }
-                    if(!possuiAcesso){
-                        exibirMensagem("Acesso Negado!");
-                    }
-                }
-            }
-        }catch(Exception e){
-            exibirMensagem("Exceção: "+e);
+        HttpSession sessao = request.getSession(false);
+        if (sessao == null) {
+            return null;
         }
-        return u;
-    
+        Object usuario = sessao.getAttribute("ulogado");
+        return usuario instanceof Usuario ? (Usuario) usuario : null;
     }
     
      public static boolean verificarPermissao(HttpServletRequest request,
@@ -194,7 +166,8 @@ public class GerenciarLogin extends HttpServlet {
                     response.sendRedirect("form_login.jsp");
                 }else{
                     if (u.getPerfil() == null || u.getPerfil().getMenus() == null || u.getPerfil().getMenus().getMenusVinculados() == null || u.getPerfil().getMenus().getMenusVinculados().isEmpty()) {
-                        return true;
+                        exibirMensagem("Acesso Negado!");
+                        return false;
                     }
 
                     if (paginaPublica(uri)) {

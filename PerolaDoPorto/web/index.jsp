@@ -21,7 +21,7 @@
                     <main class="content">
                         <section class="hero dashboard-heading">
                             <div>
-                                <span class="eyebrow">Área administrativa</span>
+                                <span class="eyebrow">Painel da equipe · ${sessionScope.ulogado.perfil.nome}</span>
                                 <h1>Olá, ${sessionScope.ulogado.nome}</h1>
                                 <p>O que você gostaria de organizar hoje?</p>
                             </div>
@@ -39,26 +39,15 @@
                         </section>
 
                         <section class="actions-grid" aria-label="Funcionalidades">
-                            <a class="action-tile" href="gerenciar_cliente.do?acao=listarTodos">
-                                <span>Relacionamento</span>
-                                <strong>Clientes</strong>
-                                <small>Consulte e atualize cadastros <b aria-hidden="true">→</b></small>
-                            </a>
-                            <a class="action-tile" href="gerenciar_quarto.do?acao=listarTodos">
-                                <span>Hospedagem</span>
-                                <strong>Quartos</strong>
-                                <small>Gerencie acomodações e disponibilidade <b aria-hidden="true">→</b></small>
-                            </a>
-                            <a class="action-tile" href="gerenciar_servico.do?acao=listarTodos">
-                                <span>Experiência</span>
-                                <strong>Serviços</strong>
-                                <small>Organize os serviços oferecidos <b aria-hidden="true">→</b></small>
-                            </a>
-                            <a class="action-tile" href="gerenciar_usuario.do?acao=listarTodos">
-                                <span>Equipe</span>
-                                <strong>Usuários</strong>
-                                <small>Gerencie os acessos ao sistema <b aria-hidden="true">→</b></small>
-                            </a>
+                            <c:forEach var="menu" items="${sessionScope.ulogado.perfil.menus.menusVinculados}">
+                                <c:if test="${menu.exibir==1 && menu.link!='index.jsp'}">
+                                    <a class="action-tile" href="${menu.link}">
+                                        <span>Pérola do Porto</span>
+                                        <strong>${menu.nome}</strong>
+                                        <small>Abrir módulo <b aria-hidden="true">→</b></small>
+                                    </a>
+                                </c:if>
+                            </c:forEach>
                         </section>
                     </main>
                 </c:when>

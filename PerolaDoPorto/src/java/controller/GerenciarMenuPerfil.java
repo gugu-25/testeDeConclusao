@@ -139,13 +139,15 @@ public class GerenciarMenuPerfil extends HttpServlet {
         exibirMensagem(String mensagem, boolean resposta, String link, HttpServletResponse response){
             try{
                 PrintWriter out = response.getWriter();
-                out.println("<script type='text/javascript'>");
-                out.println("alert('"+mensagem+"')");
+                out.println("<script src='js/app-dialog.js'></script>");
+                out.println("<script>");
+                out.println("appMessage('" + mensagem + "', {");
                 if(resposta){
-                    out.println("location.href='"+link+"'");
+                    out.println("type: 'success', redirect: '" + link + "'");
                 }else{
-                    out.println("history.back();");
+                    out.println("type: 'error', back: true");
                 }
+                out.println("});");
                 out.println("</script>");
                 out.close();
             }catch(Exception e){

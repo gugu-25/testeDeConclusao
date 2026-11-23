@@ -21,6 +21,14 @@
 
                     <form method="POST" action="gerenciar_usuario.do">
                         <input type="hidden" name="idUsuario" id="idUsuario" value="${usuario.idUsuario}"/>
+                        <c:choose>
+                            <c:when test="${usuario.idUsuario > 0}">
+                                <input type="hidden" name="acao" value="alterar"/>
+                            </c:when>
+                            <c:otherwise>
+                                <input type="hidden" name="acao" value="cadastrar"/>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="form-grid">
                             <div class="form-field">
@@ -35,7 +43,7 @@
 
                             <div class="form-field">
                                 <label for="senha">Senha</label>
-                                <input type="password" name="senha" id="senha" value="${usuario.senha}" required/>
+                                <input type="password" name="senha" id="senha" autocomplete="new-password" required/>
                             </div>
 
                             <div class="form-field">

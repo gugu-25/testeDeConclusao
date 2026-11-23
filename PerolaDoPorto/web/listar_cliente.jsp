@@ -8,11 +8,21 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Clientes</title>
         <link rel="stylesheet" href="css/estilo.css">
+        <script src="js/app-dialog.js"></script>
         <script>
             function confirmarExclusao(idCliente, nome) {
-                if (confirm('Deseja realmente desativar o cliente ' + nome + '?')) {
-                    window.open('gerenciar_cliente.do?acao=desativar&idCliente=' + idCliente, '_self');
-                }
+                appConfirm(
+                    'Deseja realmente desativar o cliente ' + nome + '?',
+                    function () {
+                        window.location.href = 'gerenciar_cliente.do?acao=desativar&idCliente=' + idCliente;
+                    },
+                    {
+                        title: 'Desativar cliente',
+                        type: 'error',
+                        confirmText: 'Desativar',
+                        cancelText: 'Cancelar'
+                    }
+                );
             }
         </script>
     </head>
@@ -26,7 +36,9 @@
                     <div>
                         <h2>Lista de Clientes</h2>
                     </div>
-                    <a href="form_cliente.jsp" class="btn btn-primary">Novo cadastro</a>
+                    <c:if test="${ulogado.perfil.nome=='Atendente' || ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                        <a href="form_cliente.jsp" class="btn btn-primary">Novo cadastro</a>
+                    </c:if>
                 </div>
 
                 <c:choose>
@@ -60,8 +72,12 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="gerenciar_cliente.do?acao=alterar&idCliente=${c.idCliente}" class="btn btn-primary">Editar</a>
-                                                <button class="btn btn-danger" onclick="confirmarExclusao(${c.idCliente}, '${c.nomeRazao}')">Desativar</button>
+                                                <c:if test="${ulogado.perfil.nome=='Atendente' || ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                                                    <a href="gerenciar_cliente.do?acao=alterar&idCliente=${c.idCliente}" class="btn btn-primary">Editar</a>
+                                                </c:if>
+                                                <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
+                                                    <button class="btn btn-danger" onclick="confirmarExclusao(${c.idCliente}, '${c.nomeRazao}')">Desativar</button>
+                                                </c:if>
                                             </td>
                                         </tr>
                                     </c:forEach>

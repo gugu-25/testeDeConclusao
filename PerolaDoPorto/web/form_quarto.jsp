@@ -27,6 +27,14 @@
 
                     <form method="POST" action="gerenciar_quarto.do">
                         <input type="hidden" name="idQuarto" id="idQuarto" value="${quarto.idQuarto}"/>
+                        <c:choose>
+                            <c:when test="${quarto.idQuarto > 0}">
+                                <input type="hidden" name="acao" value="alterar"/>
+                            </c:when>
+                            <c:otherwise>
+                                <input type="hidden" name="acao" value="cadastrar"/>
+                            </c:otherwise>
+                        </c:choose>
 
                         <div class="form-grid">
                             <div class="form-field full">
@@ -145,7 +153,7 @@
 
                             <div class="form-field">
                                 <label for="valor">Valor da Diária</label>
-                                <input type="number" step="0.01" name="valor" id="valor" value="${quarto.valor}" required/>
+                                <input type="number" min="0" step="0.01" name="valor" id="valor" value="${quarto.valor}" required/>
                             </div>
 
                             <div class="form-field">
