@@ -77,7 +77,7 @@
                         <section class="experience-section" id="experiencia">
                             <div class="section-heading">
                                 <span class="eyebrow">Pérola do Porto</span>
-                                <h2>Descanso com um toque especial.</h2>
+                                <h2>Descanso com um toque de prazer.</h2>
                                 <p>Preparamos cada detalhe para você aproveitar a estadia no seu ritmo.</p>
                             </div>
                             <div class="experience-grid">

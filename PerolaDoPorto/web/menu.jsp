@@ -21,10 +21,11 @@
     </ul>
     <div class="user-panel">
         <span>
-            Bem-vindo(a), <c:if test="${ulogado!=null}">${ulogado.nome}</c:if>
-            <c:if test="${ulogado!=null && ulogado.perfil!=null}">
-                <small class="user-role">${ulogado.perfil.nome}</small>
+            Bem-vindo(a), <c:if test="${ulogado!=null && ulogado.perfil!=null}">
+                <strong class="user-role">${ulogado.perfil.nome}</strong>
             </c:if>
+            <c:if test="${ulogado!=null}">${ulogado.nome}</c:if>
+           
         </span>
         <a href="gerenciar_login.do" class="logout" onclick="return confirm('Tem certeza que deseja sair?');">Sair</a>
     </div>

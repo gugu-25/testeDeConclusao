@@ -36,10 +36,33 @@
                                 <input type="text" name="nomeRazao" id="nomeRazao" value="${cliente.nomeRazao}" required/>
                             </div>
 
-                            <div class="form-field">
-                                <label for="cpfCnpj">CPF/CNPJ</label>
-                                <input type="text" name="cpfCnpj" id="cpfCnpj" value="${cliente.cpfCnpj}" required/>
+                            <div class="form-group">
+                                <label for="documento">CPF ou CNPJ:</label>
+                                <input type="text" id="documento" name="documento" class="form-control" maxlength="18"
+                                     oninput="aplicarMascaraCpfCnpj(this)" required />
                             </div>
+                            
+                            <script>
+                                function aplicarMascaraCpfCnpj(campo) {
+                                    let valor = campo.value.replace(/\D/g, '');
+
+                                    if (valor.length <= 11) {
+                                        // Máscara de CPF: 000.000.000-00
+                                        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+                                        valor = valor.replace(/(\d{3})(\d)/, '$1.$2');
+                                        valor = valor.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                                    } else {
+                                        // Máscara de CNPJ: 00.000.000/0000-00
+                                        valor = valor.replace(/^(\d{2})(\d)/, '$1.$2');
+                                        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                                        valor = valor.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                                        valor = valor.replace(/(\d{4})(\d)/, '$1-$2');
+                                    }
+
+                                    campo.value = valor;
+                                }
+                            </script>
+
 
                             <div class="form-field">
                                 <label for="rgIe">RG/IE</label>
