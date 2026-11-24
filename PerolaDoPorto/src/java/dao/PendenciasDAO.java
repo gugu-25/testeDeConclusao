@@ -124,6 +124,49 @@ public class PendenciasDAO extends DataBaseDAO {
         }
         try {
             this.conectar();
+            conn.setAutoCommit(false);
+
+            int idDiaria = p.getDiariaQuartoServico().getDiariaQuarto().getDiaria().getIdDiaria();
+            int idQuarto = p.getDiariaQuartoServico().getDiariaQuarto().getQuarto().getIdQuarto();
+            int idServico = p.getDiariaQuartoServico().getServico().getIdServico();
+
+            String verificarVinculo =
+                    "SELECT 1 FROM diaria_quarto_servico "
+                    + "WHERE diaria_idDiaria=? AND quarto_idQuarto=? AND servico_idServico=?";
+            try (PreparedStatement verificar = conn.prepareStatement(verificarVinculo)) {
+                verificar.setInt(1, idDiaria);
+                verificar.setInt(2, idQuarto);
+                verificar.setInt(3, idServico);
+                try (ResultSet rs = verificar.executeQuery()) {
+                    if (!rs.next()) {
+                        String obterValor =
+                                "SELECT valor FROM servico WHERE idServico=? AND status=1";
+                        double valorServico;
+                        try (PreparedStatement obter = conn.prepareStatement(obterValor)) {
+                            obter.setInt(1, idServico);
+                            try (ResultSet servicoRs = obter.executeQuery()) {
+                                if (!servicoRs.next()) {
+                                    throw new SQLException("Serviço inválido ou inativo");
+                                }
+                                valorServico = servicoRs.getDouble("valor");
+                            }
+                        }
+
+                        String vincular =
+                                "INSERT INTO diaria_quarto_servico "
+                                + "(diaria_idDiaria, quarto_idQuarto, servico_idServico, valorServicoAtual) "
+                                + "VALUES(?,?,?,?)";
+                        try (PreparedStatement inserirVinculo = conn.prepareStatement(vincular)) {
+                            inserirVinculo.setInt(1, idDiaria);
+                            inserirVinculo.setInt(2, idQuarto);
+                            inserirVinculo.setInt(3, idServico);
+                            inserirVinculo.setDouble(4, valorServico);
+                            inserirVinculo.executeUpdate();
+                        }
+                    }
+                }
+            }
+
             try (PreparedStatement pstm = conn.prepareStatement(sql)) {
                 pstm.setString(1, p.getDescricao());
                 pstm.setDouble(2, p.getValor());
@@ -143,7 +186,16 @@ public class PendenciasDAO extends DataBaseDAO {
                     sucesso = true;
                 }
             }
+            conn.commit();
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    Logger.getLogger(PendenciasDAO.class.getName())
+                            .log(Level.SEVERE, "Falha ao desfazer o cadastro da pendencia", rollbackError);
+                }
+            }
             Logger.getLogger(PendenciasDAO.class.getName()).log(Level.SEVERE, null, e);
         } finally {
             this.desconectar();

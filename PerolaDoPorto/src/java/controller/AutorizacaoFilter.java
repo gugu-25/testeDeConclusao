@@ -32,6 +32,8 @@ public class AutorizacaoFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         String path = httpRequest.getServletPath();
+        httpRequest.setCharacterEncoding("UTF-8");
+        httpResponse.setCharacterEncoding("UTF-8");
         if ("POST".equals(httpRequest.getMethod())) {
             httpRequest.setCharacterEncoding("UTF-8");
         }

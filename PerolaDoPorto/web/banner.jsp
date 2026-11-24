@@ -2,7 +2,11 @@
 <script src="js/app-dialog.js"></script>
 <div class="topbar">
     <div class="brand">
-        <div class="brand-mark">P</div>
+        <button type="button" class="brand-mark brand-menu-toggle"
+                aria-controls="nav-links" aria-expanded="false"
+                aria-label="Abrir menu" onclick="toggleMobileMenu()">
+            P
+        </button>
         <div>
             <strong>Pérola do Porto</strong>
             <small>Hotel &amp; Suites</small>

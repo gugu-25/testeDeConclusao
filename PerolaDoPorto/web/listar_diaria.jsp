@@ -15,6 +15,71 @@
                     window.location.href = 'gerenciar_diaria.do?acao=desativar&idDiaria=' + id;
                 }, {title: 'Desativar diária', type: 'error', confirmText: 'Desativar'});
             }
+
+            function somenteDigitos(valor) {
+                return (valor || '').replace(/\D/g, '');
+            }
+
+            function formatarCpfCnpj(valor) {
+                var digitos = somenteDigitos(valor);
+                if (digitos.length <= 11) {
+                    digitos = digitos.replace(/(\d{3})(\d)/, '$1.$2');
+                    digitos = digitos.replace(/(\d{3})(\d)/, '$1.$2');
+                    digitos = digitos.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+                } else {
+                    digitos = digitos.replace(/^(\d{2})(\d)/, '$1.$2');
+                    digitos = digitos.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+                    digitos = digitos.replace(/\.(\d{3})(\d)/, '.$1/$2');
+                    digitos = digitos.replace(/(\d{4})(\d)/, '$1-$2');
+                }
+                return digitos;
+            }
+
+            function buscarClientePorDocumento(campo) {
+                campo.value = formatarCpfCnpj(campo.value);
+                var documentos = document.querySelectorAll('#clientesPorDocumento option');
+                var digitosInformados = somenteDigitos(campo.value);
+                var idCampo = document.getElementById('idCliente');
+                var resultado = document.getElementById('clienteSelecionado');
+
+                idCampo.value = '';
+                resultado.className = 'guest-document-result';
+                resultado.textContent = 'Nenhum hóspede selecionado';
+
+                if (digitosInformados.length < 1) {
+                    return;
+                }
+
+                documentos.forEach(function (opcao) {
+                    if (somenteDigitos(opcao.value) === digitosInformados) {
+                        idCampo.value = opcao.getAttribute('data-id');
+                        resultado.className = 'guest-document-result found';
+                        resultado.textContent = 'Hóspede encontrado: ' + opcao.getAttribute('label');
+                    }
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', function () {
+                var formulario = document.querySelector('form[action="gerenciar_diaria.do"]');
+                var idCampo = document.getElementById('idCliente');
+                if (!formulario || !idCampo) {
+                    return;
+                }
+                formulario.addEventListener('submit', function (evento) {
+                    if (!idCampo.value) {
+                        evento.preventDefault();
+                        var campo = document.getElementById('cpfCliente');
+                        var resultado = document.getElementById('clienteSelecionado');
+                        if (resultado) {
+                            resultado.className = 'guest-document-result error';
+                            resultado.textContent = 'Digite um CPF ou CNPJ cadastrado.';
+                        }
+                        if (campo) {
+                            campo.focus();
+                        }
+                    }
+                });
+            });
         </script>
     </head>
     <body>
@@ -36,14 +101,31 @@
                                 <div class="form-field full">
                                     <label for="idCliente">Hóspede</label>
                                     <jsp:useBean class="model.ClienteDAO" id="clientesDAO"/>
-                                    <select id="idCliente" name="idCliente" required>
-                                        <option value="">Selecione o hóspede para iniciar a diária</option>
+                                    <div class="guest-document-search">
+                                        <input type="text"
+                                               id="cpfCliente"
+                                               name="cpfCliente"
+                                               list="clientesPorDocumento"
+                                               maxlength="18"
+                                               autocomplete="off"
+                                               inputmode="numeric"
+                                               placeholder="Digite o CPF ou CNPJ do hóspede"
+                                               oninput="buscarClientePorDocumento(this)"
+                                               required>
+                                        <datalist id="clientesPorDocumento">
                                         <c:forEach var="cliente" items="${clientesDAO.lista}">
                                             <c:if test="${cliente.status==1}">
-                                                <option value="${cliente.idCliente}">${cliente.nomeRazao}</option>
+                                                <option value="${cliente.cpfCnpj}"
+                                                        data-id="${cliente.idCliente}"
+                                                        label="${cliente.nomeRazao}"></option>
                                             </c:if>
                                         </c:forEach>
-                                    </select>
+                                        </datalist>
+                                        <input type="hidden" id="idCliente" name="idCliente" value="">
+                                        <div class="guest-document-result" id="clienteSelecionado" aria-live="polite">
+                                            Nenhum hóspede selecionado
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-actions">

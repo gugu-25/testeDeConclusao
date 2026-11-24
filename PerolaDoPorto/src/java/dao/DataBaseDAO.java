@@ -17,7 +17,11 @@ public class DataBaseDAO {
     
     private static final String URL = System.getProperty("perola.db.url",
             System.getenv().getOrDefault("PEROLA_DB_URL",
-                    "jdbc:mysql://localhost:3306/perolatcc_novo?useSSL=false&useUnicode=true&characterEncoding=UTF-8"));
+                    "jdbc:mysql://localhost:3306/perolatcc_novo"
+                    + "?useSSL=false&useUnicode=true&characterEncoding=UTF-8"
+                    + "&sessionVariables=character_set_client=utf8mb4,"
+                    + "character_set_connection=utf8mb4,"
+                    + "character_set_results=utf8mb4"));
     private static final String USER = System.getProperty("perola.db.user",
             System.getenv().getOrDefault("PEROLA_DB_USER", "root"));
     private static final String PASSWORD = System.getProperty("perola.db.password",

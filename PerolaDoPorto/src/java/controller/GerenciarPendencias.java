@@ -178,6 +178,15 @@ public class GerenciarPendencias extends HttpServlet {
                     erros.add("ID do Serviço inválido");
                 }
             }
+            if (idDiaria <= 0) {
+                erros.add("Selecione uma diária");
+            }
+            if (idQuarto <= 0) {
+                erros.add("Selecione um quarto");
+            }
+            if (idServico <= 0) {
+                erros.add("Selecione um serviço");
+            }
             
             if (descricao == null || descricao.trim().isEmpty()) {
                 erros.add("O campo descrição é obrigatório");

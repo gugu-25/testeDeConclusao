@@ -2,6 +2,7 @@ CREATE DATABASE IF NOT EXISTS `perolatcc_novo`
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_unicode_ci;
 USE `perolatcc_novo`;
+SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
