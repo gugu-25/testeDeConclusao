@@ -17,7 +17,8 @@ public class PendenciasDAO extends DataBaseDAO {
         ArrayList<Pendencias> lista = new ArrayList<>();
         String sql = "SELECT p.*, dqs.diaria_idDiaria AS diariaId, "
                    + "dqs.quarto_idQuarto AS quartoId, dqs.servico_idServico AS servicoId, "
-                   + "c.nomeRazao AS nomeCliente, q.numero AS numeroQuarto, s.nome AS nomeServico "
+                   + "c.nomeRazao AS nomeCliente, q.numero AS numeroQuarto, s.nome AS nomeServico, s.valor AS valorServico, "
+                   + "d.valorTotal AS valorTotalDiaria, d.statusPagamento AS statusPagamento "
                    + "FROM pendencias p "
                    + "LEFT JOIN diaria_quarto_servico dqs "
                    + "ON dqs.diaria_idDiaria = p.diaria_quarto_servico_diaria_quarto_diaria_idDiaria "
@@ -46,6 +47,8 @@ public class PendenciasDAO extends DataBaseDAO {
                     Servico servico = new Servico();
                     
                     diaria.setIdDiaria(rs.getInt("diariaId"));
+                    diaria.setValorTotal(rs.getDouble("valorTotalDiaria"));
+                    diaria.setStatusPagamento(rs.getInt("statusPagamento"));
                     Cliente cliente = new Cliente();
                     cliente.setNomeRazao(rs.getString("nomeCliente"));
                     diaria.setCliente(cliente);
@@ -53,6 +56,7 @@ public class PendenciasDAO extends DataBaseDAO {
                     quarto.setNumero(rs.getInt("numeroQuarto"));
                     servico.setIdServico(rs.getInt("servicoId"));
                     servico.setNome(rs.getString("nomeServico"));
+                    servico.setValor(rs.getDouble("valorServico"));
                     
                     dq.setDiaria(diaria);
                     dq.setQuarto(quarto);

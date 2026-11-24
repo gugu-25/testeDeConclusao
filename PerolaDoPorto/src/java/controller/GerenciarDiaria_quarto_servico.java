@@ -8,6 +8,8 @@ package controller;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import javax.servlet.http.HttpSession;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
@@ -16,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.DiariaQuartoServico;
 import model.DiariaQuartoServicoDAO;
+import model.QuartoDAO;
 import model.Servico;
 
 /**
@@ -48,7 +51,8 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
             int idQuarto = 0;
             
             if (acao.equals("gerenciar")) {
-               if (GerenciarLogin.verificarPermissao(request, response)) { 
+               if ("pendencias".equals(request.getParameter("origem"))
+                       || GerenciarLogin.verificarPermissao(request, response)) {
                     try {
                         idDiaria = Integer.parseInt(idDiariaStr);
                         idQuarto = Integer.parseInt(idQuartoStr);
@@ -58,26 +62,34 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
                         if (idDiaria > 0 && idQuarto > 0) {
                             HttpSession session = request.getSession();
                             String chaveCarrinho = chaveCarrinho(idDiaria, idQuarto);
-                            ArrayList<Integer> idsCarrinho = lerCarrinho(session, chaveCarrinho);
+                            Map<Integer, Integer> carrinho = lerCarrinho(session, chaveCarrinho);
                             ArrayList<Integer> idsDisponiveis = new ArrayList<>();
                             ArrayList<Servico> servicosCarrinho = new ArrayList<>();
                             double totalCarrinho = 0;
+                            int quantidadeCarrinho = 0;
                             for (Servico servico : dqs.getServicosNaoVinculados()) {
-                                if (idsCarrinho.contains(servico.getIdServico())) {
+                                Integer quantidade = carrinho.get(servico.getIdServico());
+                                if (quantidade != null) {
                                     idsDisponiveis.add(servico.getIdServico());
                                     servicosCarrinho.add(servico);
-                                    totalCarrinho += servico.getValor();
+                                    servico.setQuantidade(quantidade);
+                                    totalCarrinho += servico.getValor() * quantidade;
+                                    quantidadeCarrinho += quantidade;
                                 }
                             }
-                            session.setAttribute(chaveCarrinho, idsDisponiveis);
+                            session.setAttribute(chaveCarrinho, carrinho);
                             RequestDispatcher disp = 
                                     getServletContext().getRequestDispatcher("/form_diaria_quarto_servico.jsp");
                             request.setAttribute("diaria_quarto_servico", dqs);
                             request.setAttribute("idDiaria", idDiaria);
                             request.setAttribute("idQuarto", idQuarto);
+                            request.setAttribute("numeroQuarto",
+                                    new QuartoDAO().getCarregaPorID(idQuarto).getNumero());
                             request.setAttribute("carrinhoServicos", servicosCarrinho);
-                            request.setAttribute("quantidadeCarrinho", servicosCarrinho.size());
+                            request.setAttribute("quantidadeCarrinho", quantidadeCarrinho);
                             request.setAttribute("totalCarrinho", totalCarrinho);
+                            request.setAttribute("origemPendencias",
+                                    "pendencias".equals(request.getParameter("origem")));
                             disp.forward(request, response);
                         } else {
                             exibirMensagem("Diária ou Quarto não encontrados", false, "", response);
@@ -155,7 +167,11 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
                     + idDiaria + "&idQuarto=" + idQuarto;
             HttpSession session = request.getSession();
             String chaveCarrinho = chaveCarrinho(idDiaria, idQuarto);
-            ArrayList<Integer> idsCarrinho = lerCarrinho(session, chaveCarrinho);
+            Map<Integer, Integer> carrinho = lerCarrinho(session, chaveCarrinho);
+            boolean origemPendencias = "pendencias".equals(request.getParameter("origem"));
+            if (origemPendencias) {
+                redirect += "&origem=pendencias";
+            }
 
             if ("adicionar".equals(carrinhoAcao)) {
                 int idServico = Integer.parseInt(idServicoStr);
@@ -171,27 +187,56 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
                     exibirMensagem("Esse serviço não está disponível para o quarto", false, "", response);
                     return;
                 }
-                if (!idsCarrinho.contains(idServico)) {
-                    idsCarrinho.add(idServico);
-                    session.setAttribute(chaveCarrinho, idsCarrinho);
+                String quantidadeStr = request.getParameter("quantidade");
+                int quantidade;
+                try {
+                    quantidade = Integer.parseInt(quantidadeStr);
+                } catch (NumberFormatException ex) {
+                    exibirMensagem("Informe uma quantidade válida", false, "", response);
+                    return;
                 }
+                if (quantidade < 1) {
+                    exibirMensagem("Informe pelo menos uma unidade", false, "", response);
+                    return;
+                }
+                carrinho.put(idServico, carrinho.getOrDefault(idServico, 0) + quantidade);
+                session.setAttribute(chaveCarrinho, carrinho);
                 exibirMensagem("Serviço adicionado ao carrinho", true, redirect, response);
             } else if ("remover".equals(carrinhoAcao)) {
                 int idServico = Integer.parseInt(idServicoStr);
-                if (!idsCarrinho.remove(Integer.valueOf(idServico))) {
+                if (!carrinho.containsKey(idServico)) {
                     exibirMensagem("Serviço não encontrado no carrinho", false, "", response);
                     return;
                 }
-                session.setAttribute(chaveCarrinho, idsCarrinho);
+                carrinho.remove(idServico);
+                session.setAttribute(chaveCarrinho, carrinho);
                 exibirMensagem("Serviço removido do carrinho", true, redirect, response);
+            } else if ("ajustar".equals(carrinhoAcao)) {
+                int idServico = Integer.parseInt(idServicoStr);
+                int quantidade;
+                try {
+                    quantidade = Integer.parseInt(request.getParameter("quantidade"));
+                } catch (NumberFormatException ex) {
+                    exibirMensagem("Informe uma quantidade válida", false, "", response);
+                    return;
+                }
+                if (quantidade < 1) {
+                    exibirMensagem("Informe pelo menos uma unidade", false, "", response);
+                    return;
+                }
+                carrinho.put(idServico, quantidade);
+                session.setAttribute(chaveCarrinho, carrinho);
+                exibirMensagem("Quantidade atualizada", true, redirect, response);
             } else if ("confirmar".equals(carrinhoAcao)) {
-                if (idsCarrinho.isEmpty()) {
+                if (carrinho.isEmpty()) {
                     exibirMensagem("Adicione pelo menos um serviço ao carrinho", false, "", response);
                     return;
                 }
-                if (dqsDAO.adicionarEmConta(idDiaria, idQuarto, idsCarrinho)) {
+                if (dqsDAO.adicionarEmConta(idDiaria, idQuarto, carrinho)) {
                     session.removeAttribute(chaveCarrinho);
-                    exibirMensagem("Serviços adicionados à conta e às pendências", true, redirect, response);
+                    String destino = origemPendencias
+                            ? "gerenciar_pendencias.do?acao=listarTodos" : redirect;
+                    exibirMensagem("Serviços adicionados à conta e às pendências", true, destino, response);
                 } else {
                     exibirMensagem("Não foi possível adicionar os serviços à conta", false, "", response);
                 }
@@ -208,13 +253,22 @@ public class GerenciarDiaria_quarto_servico extends HttpServlet {
         return "carrinhoServicos_" + idDiaria + "_" + idQuarto;
     }
 
-    private ArrayList<Integer> lerCarrinho(HttpSession session, String chaveCarrinho) {
-        ArrayList<Integer> itens = new ArrayList<>();
+    private Map<Integer, Integer> lerCarrinho(HttpSession session, String chaveCarrinho) {
+        Map<Integer, Integer> itens = new HashMap<>();
         Object atual = session.getAttribute(chaveCarrinho);
+        if (atual instanceof Map<?, ?>) {
+            for (Map.Entry<?, ?> item : ((Map<?, ?>) atual).entrySet()) {
+                if (item.getKey() instanceof Integer && item.getValue() instanceof Integer
+                        && (Integer) item.getKey() > 0 && (Integer) item.getValue() > 0) {
+                    itens.put((Integer) item.getKey(), (Integer) item.getValue());
+                }
+            }
+            return itens;
+        }
         if (atual instanceof ArrayList<?>) {
             for (Object item : (ArrayList<?>) atual) {
                 if (item instanceof Integer && (Integer) item > 0) {
-                    itens.add((Integer) item);
+                    itens.put((Integer) item, 1);
                 }
             }
         }

@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -58,8 +59,8 @@ public class DiariaQuartoServicoDAO extends DataBaseDAO {
         return sucesso;
     }
 
-    public boolean adicionarEmConta(int idDiaria, int idQuarto, List<Integer> idsServico) {
-        if (idsServico == null || idsServico.isEmpty()) {
+    public boolean adicionarEmConta(int idDiaria, int idQuarto, Map<Integer, Integer> carrinho) {
+        if (carrinho == null || carrinho.isEmpty()) {
             return false;
         }
 
@@ -85,7 +86,12 @@ public class DiariaQuartoServicoDAO extends DataBaseDAO {
             try (PreparedStatement disponibilidade = conn.prepareStatement(disponibilidadeSql);
                  PreparedStatement vincular = conn.prepareStatement(vincularSql);
                  PreparedStatement criarPendencia = conn.prepareStatement(pendenciaSql)) {
-                for (Integer idServico : idsServico) {
+                for (Map.Entry<Integer, Integer> item : carrinho.entrySet()) {
+                    Integer idServico = item.getKey();
+                    int quantidade = item.getValue() == null ? 0 : item.getValue();
+                    if (quantidade < 1) {
+                        throw new SQLException("Quantidade inválida no carrinho");
+                    }
                     if (idServico == null || idServico <= 0) {
                         throw new SQLException("ID de serviço inválido no carrinho");
                     }
@@ -114,8 +120,8 @@ public class DiariaQuartoServicoDAO extends DataBaseDAO {
                         throw new SQLException("Não foi possível vincular o serviço à diária");
                     }
 
-                    criarPendencia.setString(1, "Serviço: " + nomeServico);
-                    criarPendencia.setDouble(2, valorServico);
+                    criarPendencia.setString(1, "Serviço: " + nomeServico + " (x" + quantidade + ")");
+                    criarPendencia.setDouble(2, valorServico * quantidade);
                     criarPendencia.setInt(3, idDiaria);
                     criarPendencia.setInt(4, idQuarto);
                     criarPendencia.setInt(5, idServico);

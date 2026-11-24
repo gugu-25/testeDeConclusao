@@ -60,7 +60,10 @@ public class AutorizacaoFilter implements Filter {
         }
 
         String permissao = resolverPermissao(httpRequest);
-        if (permissao == null || !possuiPermissao(perfil, permissao)) {
+        boolean acessoDiretoPendencias =
+                perfilPodeAcessarPendencias(perfil) && rotaDePendencias(httpRequest);
+        if (!acessoDiretoPendencias
+                && (permissao == null || !possuiPermissao(perfil, permissao))) {
             httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN, "Acesso negado");
             return;
         }
@@ -70,6 +73,15 @@ public class AutorizacaoFilter implements Filter {
 
     private String resolverPermissao(HttpServletRequest request) {
         String caminho = request.getServletPath();
+        if ("gerenciar_diaria_quarto_servico.do".equals(caminho)
+                && "pendencias".equals(request.getParameter("origem"))) {
+            return "gerenciar_pendencias.do?acao=listarTodos";
+        }
+        if ("gerenciar_pendencias.do".equals(caminho)
+                && ("servicosQuarto".equals(request.getParameter("acao"))
+                || "nova".equals(request.getParameter("acao")))) {
+            return "gerenciar_pendencias.do?acao=listarTodos";
+        }
         if (caminho.endsWith(".jsp")) {
             return permissaoDaPagina(caminho);
         }
@@ -93,6 +105,45 @@ public class AutorizacaoFilter implements Filter {
             acao = "listarTodos";
         }
         return caminho.substring(1) + "?acao=" + acao;
+    }
+
+    private boolean perfilPodeAcessarPendencias(Perfil perfil) {
+        if (perfil.getNome() == null) {
+            return false;
+        }
+        String nome = perfil.getNome().trim();
+        return "Administrador".equalsIgnoreCase(nome)
+                || "Admin".equalsIgnoreCase(nome)
+                || "Gerente".equalsIgnoreCase(nome)
+                || "Atendente".equalsIgnoreCase(nome);
+    }
+
+    private boolean rotaDePendencias(HttpServletRequest request) {
+        String caminho = request.getServletPath();
+        String metodo = request.getMethod();
+        String acao = request.getParameter("acao");
+
+        if ("/listar_pendencias.jsp".equals(caminho)
+                || "/form_pendencias.jsp".equals(caminho)) {
+            return "GET".equals(metodo);
+        }
+        if ("/gerenciar_pendencias.do".equals(caminho)) {
+            if ("GET".equals(metodo)) {
+                return "listarTodos".equals(acao)
+                        || "nova".equals(acao)
+                        || "servicosQuarto".equals(acao)
+                        || "alterar".equals(acao)
+                        || "desativar".equals(acao);
+            }
+            return "POST".equals(metodo)
+                    && ("cadastrar".equals(acao) || "alterar".equals(acao));
+        }
+        if ("/gerenciar_diaria_quarto_servico.do".equals(caminho)
+                && "pendencias".equals(request.getParameter("origem"))) {
+            return ("GET".equals(metodo) && "gerenciar".equals(acao))
+                    || ("POST".equals(metodo) && "vincular".equals(acao));
+        }
+        return false;
     }
 
     private String permissaoDaPagina(String caminho) {

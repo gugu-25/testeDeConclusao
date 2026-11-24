@@ -19,6 +19,7 @@ public class DiariaQuartoDAO extends DataBaseDAO {
         String sql = "INSERT INTO diaria_quarto (diaria_idDiaria, quarto_idQuarto, valorAtual, checkIn, checkOut) VALUES(?,?,?,?,?)";
         try {
             this.conectar();
+            conn.setAutoCommit(false);
             try (PreparedStatement pstm = conn.prepareStatement(sql)) {
                 pstm.setInt(1, idDiaria);
                 pstm.setInt(2, idQuarto);
@@ -37,11 +38,30 @@ public class DiariaQuartoDAO extends DataBaseDAO {
                 }
 
                 int rowsAffected = pstm.executeUpdate();
-                if (rowsAffected > 0) {
-                    sucesso = true;
+                if (rowsAffected == 0) {
+                    throw new SQLException("Não foi possível vincular o quarto à diária");
                 }
             }
+
+            String ocuparSql = "UPDATE quarto SET status=2 WHERE idQuarto=? AND status=1";
+            try (PreparedStatement ocupar = conn.prepareStatement(ocuparSql)) {
+                ocupar.setInt(1, idQuarto);
+                if (ocupar.executeUpdate() != 1) {
+                    throw new SQLException("O quarto não está disponível para ocupação");
+                }
+            }
+
+            conn.commit();
+            sucesso = true;
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    Logger.getLogger(DiariaQuartoDAO.class.getName())
+                            .log(Level.SEVERE, "Falha ao desfazer o vínculo do quarto", rollbackError);
+                }
+            }
             Logger.getLogger(DiariaQuartoDAO.class.getName()).log(Level.SEVERE, null, e);
         } finally {
             this.desconectar();
@@ -54,15 +74,34 @@ public class DiariaQuartoDAO extends DataBaseDAO {
         String sql = "DELETE FROM diaria_quarto WHERE diaria_idDiaria=? AND quarto_idQuarto=?";
         try {
             this.conectar();
+            conn.setAutoCommit(false);
             try (PreparedStatement pstm = conn.prepareStatement(sql)) {
                 pstm.setInt(1, idDiaria);
                 pstm.setInt(2, idQuarto);
                 int rowsAffected = pstm.executeUpdate();
                 if (rowsAffected > 0) {
-                    sucesso = true;
+                    String liberarSql = "UPDATE quarto q SET q.status=1 "
+                            + "WHERE q.idQuarto=? AND q.status=2 "
+                            + "AND NOT EXISTS (SELECT 1 FROM diaria_quarto dq "
+                            + "JOIN diaria d ON d.idDiaria=dq.diaria_idDiaria "
+                            + "WHERE dq.quarto_idQuarto=q.idQuarto AND d.statusHospedagem=1)";
+                    try (PreparedStatement liberar = conn.prepareStatement(liberarSql)) {
+                        liberar.setInt(1, idQuarto);
+                        liberar.executeUpdate();
+                    }
                 }
+                conn.commit();
+                sucesso = rowsAffected > 0;
             }
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    Logger.getLogger(DiariaQuartoDAO.class.getName())
+                            .log(Level.SEVERE, "Falha ao desfazer a desvinculação do quarto", rollbackError);
+                }
+            }
             Logger.getLogger(DiariaQuartoDAO.class.getName()).log(Level.SEVERE, null, e);
         } finally {
             this.desconectar();
@@ -102,6 +141,62 @@ public class DiariaQuartoDAO extends DataBaseDAO {
             }
         } catch (SQLException e) {
             Logger.getLogger(DiariaQuartoDAO.class.getName()).log(Level.SEVERE, null, e);
+        } finally {
+            this.desconectar();
+        }
+        return lista;
+    }
+
+    public ArrayList<DiariaQuarto> hospedagensAtivasPorNumeroQuarto(int numero) throws SQLException {
+        ArrayList<DiariaQuarto> lista = new ArrayList<>();
+        String sql = "SELECT dq.diaria_idDiaria, dq.quarto_idQuarto "
+                   + "FROM diaria_quarto dq "
+                   + "JOIN diaria d ON d.idDiaria = dq.diaria_idDiaria "
+                   + "JOIN quarto q ON q.idQuarto = dq.quarto_idQuarto "
+                   + "WHERE q.numero=? AND d.statusHospedagem=1";
+        try {
+            this.conectar();
+            try (PreparedStatement pstm = conn.prepareStatement(sql)) {
+                pstm.setInt(1, numero);
+                try (ResultSet rs = pstm.executeQuery()) {
+                    while (rs.next()) {
+                        Diaria diaria = new Diaria();
+                        diaria.setIdDiaria(rs.getInt("diaria_idDiaria"));
+                        Quarto quarto = new Quarto();
+                        quarto.setIdQuarto(rs.getInt("quarto_idQuarto"));
+
+                        DiariaQuarto diariaQuarto = new DiariaQuarto();
+                        diariaQuarto.setDiaria(diaria);
+                        diariaQuarto.setQuarto(quarto);
+                        lista.add(diariaQuarto);
+                    }
+                }
+            }
+        } finally {
+            this.desconectar();
+        }
+        return lista;
+    }
+
+    public ArrayList<Quarto> quartosOcupados() throws SQLException {
+        ArrayList<Quarto> lista = new ArrayList<>();
+        String sql = "SELECT DISTINCT q.idQuarto, q.numero "
+                   + "FROM quarto q "
+                   + "JOIN diaria_quarto dq ON dq.quarto_idQuarto = q.idQuarto "
+                   + "JOIN diaria d ON d.idDiaria = dq.diaria_idDiaria "
+                   + "WHERE d.statusHospedagem=1 "
+                   + "ORDER BY q.numero";
+        try {
+            this.conectar();
+            try (PreparedStatement pstm = conn.prepareStatement(sql);
+                 ResultSet rs = pstm.executeQuery()) {
+                while (rs.next()) {
+                    Quarto quarto = new Quarto();
+                    quarto.setIdQuarto(rs.getInt("idQuarto"));
+                    quarto.setNumero(rs.getInt("numero"));
+                    lista.add(quarto);
+                }
+            }
         } finally {
             this.desconectar();
         }

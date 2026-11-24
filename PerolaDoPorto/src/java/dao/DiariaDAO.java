@@ -124,6 +124,9 @@ public class DiariaDAO extends DataBaseDAO {
         
         try {
             this.conectar();
+            if (!novaDiaria) {
+                conn.setAutoCommit(false);
+            }
             try (PreparedStatement pstm = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
                 pstm.setDouble(1, d.getValorDiaria());
                 pstm.setString(2, d.getDescricao());
@@ -159,8 +162,6 @@ public class DiariaDAO extends DataBaseDAO {
                 int rowsAffected = pstm.executeUpdate();
                 
                 if (rowsAffected > 0) {
-                    sucesso = true;
-                    
                     if (novaDiaria) {
                         try (ResultSet rs = pstm.getGeneratedKeys()) {
                             if (rs.next()) {
@@ -171,14 +172,38 @@ public class DiariaDAO extends DataBaseDAO {
                     
                     if (novaDiaria && d.getCarrinhoQuarto() != null && !d.getCarrinhoQuarto().isEmpty()) {
                         DiariaQuartoDAO dqDAO = new DiariaQuartoDAO();
+                        boolean quartosVinculados = true;
                         
                         for (DiariaQuarto item : d.getCarrinhoQuarto()) {
-                            dqDAO.vincular(d.getIdDiaria(), item.getQuarto().getIdQuarto(), item.getValorAtual(), item.getCheckIn(), item.getCheckOut()); 
+                            if (!dqDAO.vincular(d.getIdDiaria(), item.getQuarto().getIdQuarto(), item.getValorAtual(), item.getCheckIn(), item.getCheckOut())) {
+                                quartosVinculados = false;
+                            }
                         }
+                        sucesso = quartosVinculados;
+                        if (!quartosVinculados) {
+                            Logger.getLogger(DiariaDAO.class.getName())
+                                    .log(Level.SEVERE, "Nem todos os quartos foram vinculados à diária {0}", d.getIdDiaria());
+                        }
+                    } else if (novaDiaria) {
+                        sucesso = true;
+                    } else if (!novaDiaria) {
+                        sincronizarStatusQuartos(d.getIdDiaria(), d.getStatusHospedagem());
+                        conn.commit();
+                        sucesso = true;
                     }
+                } else if (!novaDiaria) {
+                    conn.rollback();
                 }
             }
         } catch (SQLException e) {
+            if (!novaDiaria && conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    Logger.getLogger(DiariaDAO.class.getName())
+                            .log(Level.SEVERE, "Falha ao desfazer a alteração da diária", rollbackError);
+                }
+            }
             Logger.getLogger(DiariaDAO.class.getName()).log(Level.SEVERE, null, e);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(DiariaDAO.class.getName()).log(Level.SEVERE, null, ex);
@@ -192,19 +217,55 @@ public class DiariaDAO extends DataBaseDAO {
         boolean sucesso = false;
         try {
             this.conectar();
+            conn.setAutoCommit(false);
             String sql = "UPDATE diaria SET statusHospedagem=2 WHERE idDiaria=?";
             try (PreparedStatement pstm = conn.prepareStatement(sql)) {
                 pstm.setInt(1, d.getIdDiaria());
                 int rowsAffected = pstm.executeUpdate();
                 if (rowsAffected > 0) {
+                    sincronizarStatusQuartos(d.getIdDiaria(), 2);
+                    conn.commit();
                     sucesso = true;
+                } else {
+                    conn.rollback();
                 }
             }
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException rollbackError) {
+                    Logger.getLogger(DiariaDAO.class.getName())
+                            .log(Level.SEVERE, "Falha ao desfazer a desativação da diária", rollbackError);
+                }
+            }
             Logger.getLogger(DiariaDAO.class.getName()).log(Level.SEVERE, null, e);
         } finally {
             this.desconectar();
         }
         return sucesso;
+    }
+
+    private void sincronizarStatusQuartos(int idDiaria, int statusHospedagem) throws SQLException {
+        String sql;
+        if (statusHospedagem == 1) {
+            sql = "UPDATE quarto q "
+                    + "JOIN diaria_quarto dq ON dq.quarto_idQuarto=q.idQuarto "
+                    + "SET q.status=2 "
+                    + "WHERE dq.diaria_idDiaria=? AND q.status=1";
+        } else {
+            sql = "UPDATE quarto q "
+                    + "JOIN diaria_quarto dq ON dq.quarto_idQuarto=q.idQuarto "
+                    + "SET q.status=1 "
+                    + "WHERE dq.diaria_idDiaria=? AND q.status=2 "
+                    + "AND NOT EXISTS (SELECT 1 FROM diaria_quarto dqAtiva "
+                    + "JOIN diaria dAtiva ON dAtiva.idDiaria=dqAtiva.diaria_idDiaria "
+                    + "WHERE dqAtiva.quarto_idQuarto=q.idQuarto "
+                    + "AND dAtiva.statusHospedagem=1)";
+        }
+        try (PreparedStatement pstm = conn.prepareStatement(sql)) {
+            pstm.setInt(1, idDiaria);
+            pstm.executeUpdate();
+        }
     }
 }

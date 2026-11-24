@@ -6,6 +6,7 @@ public class Servico {
     private String nome;
     private double valor;
     private int status;
+    private int quantidade;
 
     public Servico() {
     }
@@ -47,6 +48,14 @@ public class Servico {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public int getQuantidade() {
+        return quantidade;
+    }
+
+    public void setQuantidade(int quantidade) {
+        this.quantidade = quantidade;
     }
 
     @Override

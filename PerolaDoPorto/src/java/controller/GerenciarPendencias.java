@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import model.Diaria;
 import model.DiariaQuarto;
+import model.DiariaQuartoDAO;
 import model.DiariaQuartoServico;
 import model.Pendencias;
 import model.PendenciasDAO;
@@ -39,55 +40,81 @@ public class GerenciarPendencias extends HttpServlet {
             if (acao == null) {
                 acao = "listarTodos";
             }
-            
-            if (acao.equals("listarTodos")) {
-                if (GerenciarLogin.verificarPermissao(request, response)) {
-                    ArrayList<Pendencias> listarTodos = pDAO.getLista();
-                    RequestDispatcher disp =
-                            getServletContext().getRequestDispatcher("/listar_pendencias.jsp");
-                    request.setAttribute("listarTodos", listarTodos);
-                    disp.forward(request, response);
-                } else {
-                    exibirMensagem("Acesso negado", false, "", response);
+
+            if ("nova".equals(acao)) {
+                ArrayList<Quarto> quartosOcupados = new DiariaQuartoDAO().quartosOcupados();
+                request.setAttribute("quartosOcupados", quartosOcupados);
+                RequestDispatcher disp =
+                        getServletContext().getRequestDispatcher("/form_pendencias.jsp");
+                disp.forward(request, response);
+                return;
+            }
+
+            if ("servicosQuarto".equals(acao)) {
+                String numeroStr = request.getParameter("numero");
+                int numero;
+                try {
+                    numero = Integer.parseInt(numeroStr);
+                    if (numero <= 0) {
+                        throw new NumberFormatException();
+                    }
+                } catch (NumberFormatException e) {
+                    exibirMensagem("Informe um número de quarto válido", false, "", response);
+                    return;
                 }
+
+                DiariaQuartoDAO diariaQuartoDAO = new DiariaQuartoDAO();
+                ArrayList<DiariaQuarto> hospedagens =
+                        diariaQuartoDAO.hospedagensAtivasPorNumeroQuarto(numero);
+                if (hospedagens.isEmpty()) {
+                    exibirMensagem("Não há hospedagem ativa no quarto " + numero, false, "", response);
+                } else if (hospedagens.size() > 1) {
+                    exibirMensagem("Há mais de uma hospedagem ativa nesse quarto. Verifique as diárias antes de continuar.", false, "", response);
+                } else {
+                    DiariaQuarto diariaQuarto = hospedagens.get(0);
+                    response.sendRedirect("gerenciar_diaria_quarto_servico.do?acao=gerenciar&idDiaria="
+                            + diariaQuarto.getDiaria().getIdDiaria() + "&idQuarto="
+                            + diariaQuarto.getQuarto().getIdQuarto() + "&origem=pendencias");
+                }
+                return;
+            }
+
+            if (acao.equals("listarTodos")) {
+                ArrayList<Pendencias> listarTodos = pDAO.getLista();
+                RequestDispatcher disp =
+                        getServletContext().getRequestDispatcher("/listar_pendencias.jsp");
+                request.setAttribute("listarTodos", listarTodos);
+                disp.forward(request, response);
             } 
             else if (acao.equals("alterar")) {
-                if (GerenciarLogin.verificarPermissao(request, response)) {
-                    try {
-                        idPendencias = Integer.parseInt(idPendenciasStr);
-                        p = pDAO.getCarregaPorID(idPendencias);
-                        
-                        if (p.getIdPendencias() > 0) {
-                            RequestDispatcher disp = 
-                                    getServletContext().getRequestDispatcher("/form_pendencias.jsp");
-                            request.setAttribute("pendencias", p);
-                            disp.forward(request, response);
-                        } else {
-                            exibirMensagem("Pendência não encontrada", false, "", response);
-                        }
-                    } catch (NumberFormatException e) {
-                        exibirMensagem("ID de Pendência inválido", false, "", response);
+                try {
+                    idPendencias = Integer.parseInt(idPendenciasStr);
+                    p = pDAO.getCarregaPorID(idPendencias);
+
+                    if (p.getIdPendencias() > 0) {
+                        RequestDispatcher disp =
+                                getServletContext().getRequestDispatcher("/form_pendencias.jsp");
+                        request.setAttribute("pendencias", p);
+                        disp.forward(request, response);
+                    } else {
+                        exibirMensagem("Pendência não encontrada", false, "", response);
                     }
-                } else {
-                    exibirMensagem("Acesso negado", false, "", response);
+                } catch (NumberFormatException e) {
+                    exibirMensagem("ID de Pendência inválido", false, "", response);
                 }
             } 
             else if (acao.equals("desativar")) {
-                if (GerenciarLogin.verificarPermissao(request, response)) {
-                    try {
-                        idPendencias = Integer.parseInt(idPendenciasStr);
-                        p.setIdPendencias(idPendencias);
-                        
-                        if (pDAO.desativar(p)) {
-                            exibirMensagem("Pendência desativada com sucesso", true, "gerenciar_pendencias.do?acao=listarTodos", response);
-                        } else {
-                            exibirMensagem("Erro ao desativar a Pendência", false, "", response);
-                        }
-                    } catch (NumberFormatException e) {
-                        exibirMensagem("ID de Pendência inválido", false, "", response);
+                try {
+                    idPendencias = Integer.parseInt(idPendenciasStr);
+                    p.setIdPendencias(idPendencias);
+
+                    if (pDAO.desativar(p)) {
+                        exibirMensagem("Pendência desativada com sucesso", true, "gerenciar_pendencias.do?acao=listarTodos", response);
+                    } else {
+                        exibirMensagem("Erro ao desativar a Pendência", false, "", response);
                     }
-                } else {
-                    exibirMensagem("Acesso negado", false, "", response);
+                } catch (NumberFormatException e) {
+                    exibirMensagem("ID de Pendência inválido", false, "", response);
                 }
             }
             

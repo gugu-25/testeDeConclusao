@@ -120,23 +120,25 @@
                         </div>
                     </form>
                 </div>
-                <h3>Quartos selecionados</h3>
-                <div class="table-wrap">
-                    <table>
-                        <thead><tr><th>Quarto</th><th>Check-in</th><th>Check-out</th><th>Valor atual</th><th></th></tr></thead>
-                        <tbody>
-                            <c:forEach var="item" items="${sessionScope.diaria.carrinhoQuarto}" varStatus="loop">
-                                <tr>
-                                    <td>${item.quarto.numero}</td>
-                                    <td>${item.checkIn}</td>
-                                    <td>${item.checkOut}</td>
-                                    <td>R$ ${item.valorAtual}</td>
-                                    <td><a class="btn btn-danger" href="gerenciar_diaria.do?acao=retirarQuarto&index=${loop.index}">Remover</a></td>
-                                </tr>
-                            </c:forEach>
-                        </tbody>
-                    </table>
-                </div>
+                <c:if test="${not empty sessionScope.diaria.carrinhoQuarto}">
+                    <h3>Quartos selecionados</h3>
+                    <div class="table-wrap">
+                        <table>
+                            <thead><tr><th>Quarto</th><th>Check-in</th><th>Check-out</th><th>Valor atual</th><th></th></tr></thead>
+                            <tbody>
+                                <c:forEach var="item" items="${sessionScope.diaria.carrinhoQuarto}" varStatus="loop">
+                                    <tr>
+                                        <td>${item.quarto.numero}</td>
+                                        <td>${item.checkIn}</td>
+                                        <td>${item.checkOut}</td>
+                                        <td>R$ ${item.valorAtual}</td>
+                                        <td><a class="btn btn-danger" href="gerenciar_diaria.do?acao=retirarQuarto&index=${loop.index}">Remover</a></td>
+                                    </tr>
+                                </c:forEach>
+                            </tbody>
+                        </table>
+                    </div>
+                </c:if>
                 <div class="form-actions">
                     <a href="form_finalizar_diaria.jsp" class="btn btn-success">Continuar para os dados da diária</a>
                     <a href="gerenciar_diaria.do?acao=listarTodos" class="btn btn-warning">Cancelar</a>
