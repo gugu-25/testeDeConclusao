@@ -71,11 +71,16 @@
                                                 <span class="status-pill ${q.status==1 ? 'active' : 'inactive'}">
                                                     <c:if test="${q.status==1}">Disponível</c:if>
                                                     <c:if test="${q.status==2}">Ocupado</c:if>
-                                                    <c:if test="${q.status==3}">Manutenção</c:if>
+                                                    <c:if test="${q.status==3}">Serviço de quarto</c:if>
                                                 </span>
                                             </td>
                                             <td>
-                                                <a href="gerenciar_quarto.do?acao=alterar&idQuarto=${q.idQuarto}" class="btn btn-primary">Editar</a>
+                                                <a href="gerenciar_quarto.do?acao=alterar&idQuarto=${q.idQuarto}" class="btn btn-primary">
+                                                    <c:choose>
+                                                        <c:when test="${ulogado.perfil.nome=='Auxiliar de limpeza'}">Concluir serviço</c:when>
+                                                        <c:otherwise>Editar</c:otherwise>
+                                                    </c:choose>
+                                                </a>
                                                 <c:if test="${ulogado.perfil.nome=='Gerente' || ulogado.perfil.nome=='Administrador'}">
                                                     <button class="btn btn-danger" onclick="confirmarExclusao(${q.idQuarto}, '${q.numero}')">Desativar</button>
                                                 </c:if>
@@ -89,10 +94,27 @@
                     <c:otherwise>
                         <section class="empty-state">
                             <span class="empty-state-icon" aria-hidden="true">⌂</span>
-                            <span class="eyebrow">Sua pousada começa aqui</span>
-                            <h3>Nenhum quarto cadastrado ainda</h3>
-                            <p>Cadastre a primeira acomodação para começar a organizar a disponibilidade e as diárias.</p>
-                            <a href="gerenciar_quarto.do?acao=novo" class="btn btn-primary">Cadastrar quarto <span aria-hidden="true"></span></a>
+                            <span class="eyebrow">
+                                <c:choose>
+                                    <c:when test="${ulogado.perfil.nome=='Auxiliar de limpeza'}">Serviço de quarto</c:when>
+                                    <c:otherwise>Sua pousada começa aqui</c:otherwise>
+                                </c:choose>
+                            </span>
+                            <h3>
+                                <c:choose>
+                                    <c:when test="${ulogado.perfil.nome=='Auxiliar de limpeza'}">Nenhum quarto precisa de serviço</c:when>
+                                    <c:otherwise>Nenhum quarto cadastrado ainda</c:otherwise>
+                                </c:choose>
+                            </h3>
+                            <p>
+                                <c:choose>
+                                    <c:when test="${ulogado.perfil.nome=='Auxiliar de limpeza'}">No momento, não há quartos marcados para serviço de quarto.</c:when>
+                                    <c:otherwise>Cadastre a primeira acomodação para começar a organizar a disponibilidade e as diárias.</c:otherwise>
+                                </c:choose>
+                            </p>
+                            <c:if test="${ulogado.perfil.nome!='Auxiliar de limpeza'}">
+                                <a href="gerenciar_quarto.do?acao=novo" class="btn btn-primary">Cadastrar quarto <span aria-hidden="true"></span></a>
+                            </c:if>
                         </section>
                     </c:otherwise>
                 </c:choose>

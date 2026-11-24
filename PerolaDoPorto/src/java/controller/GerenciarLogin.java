@@ -122,16 +122,7 @@ public class GerenciarLogin extends HttpServlet {
     }
     
     private static void exibirMensagem(String mensagem){
-            try{
-                PrintWriter out = response.getWriter();
-                out.println("<script src='js/app-dialog.js'></script>");
-                out.println("<script>");
-                out.println("appMessage('" + mensagem + "', {type: 'error', back: true});");
-                out.println("</script>");
-                out.close();
-            }catch(Exception e){
-                e.printStackTrace();
-            }
+        DialogoUtil.exibir(response, mensagem, false, "form_login.jsp", false);
     }
     
     public static Usuario verificarAcesso(HttpServletRequest request,

@@ -169,7 +169,19 @@ public class GerenciarDiaria extends HttpServlet {
                         return;
                     }
                     d.setValorDiaria(valorDiaria);
-                    d.setValorTotal(valorTotal);
+                    double totalCalculado = 0.0;
+                    ArrayList<DiariaQuarto> quartosDaDiaria = d.getCarrinhoQuarto();
+                    if (quartosDaDiaria != null) {
+                        for (DiariaQuarto item : quartosDaDiaria) {
+                            if (item.getCheckIn() != null && item.getCheckOut() != null) {
+                                long diferenca = item.getCheckOut().getTime()
+                                        - item.getCheckIn().getTime();
+                                long noites = Math.max(0L, Math.round(diferenca / 86400000.0));
+                                totalCalculado += valorDiaria * noites;
+                            }
+                        }
+                    }
+                    d.setValorTotal(totalCalculado);
                     d.setStatusHospedagem(Integer.parseInt(request.getParameter("statusHospedagem")));
                     d.setStatusPagamento(Integer.parseInt(request.getParameter("statusPagamento")));
 
@@ -210,23 +222,8 @@ public class GerenciarDiaria extends HttpServlet {
     }
 
     private static void exibirMensagem(String mensagem, String linkRedirecionamento, HttpServletResponse response) {
-        try {
-            response.setContentType("text/html;charset=UTF-8");
-            PrintWriter out = response.getWriter();
-            out.println("<script src='js/app-dialog.js'></script>");
-            out.println("<script>");
-            out.println("appMessage('" + mensagem + "', {");
-            if (linkRedirecionamento != null && !linkRedirecionamento.isEmpty()) {
-                out.println("type: 'success', redirect: '" + linkRedirecionamento + "'");
-            } else {
-                out.println("type: 'error', back: true");
-            }
-            out.println("});");
-            out.println("</script>");
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        boolean sucesso = linkRedirecionamento != null && !linkRedirecionamento.isEmpty();
+        DialogoUtil.exibir(response, mensagem, sucesso, linkRedirecionamento, !sucesso);
     }
 
     @Override

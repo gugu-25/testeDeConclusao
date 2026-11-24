@@ -18,7 +18,15 @@
                 <div class="hero">
                     <div><span class="eyebrow">Diária ${idDiaria} · Quarto ${idQuarto}</span><h2>Serviços contratados</h2></div>
                     <div class="form-actions">
-                        <a href="#carrinho" class="btn btn-primary" aria-label="Abrir carrinho">🛒 Carrinho (${quantidadeCarrinho})</a>
+                        <a href="#carrinho" class="btn btn-primary cart-button" aria-label="Abrir carrinho">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 7H6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                                <circle cx="10" cy="19" r="1.5" fill="currentColor"/>
+                                <circle cx="18" cy="19" r="1.5" fill="currentColor"/>
+                            </svg>
+                            <span>Carrinho</span>
+                            <b class="cart-count">${quantidadeCarrinho}</b>
+                        </a>
                         <a href="gerenciar_pendencias.do?acao=listarTodos" class="btn btn-success">Ver pendências</a>
                         <a href="gerenciar_diaria_quarto.do?acao=gerenciar&idDiaria=${idDiaria}" class="btn btn-warning">Voltar aos quartos</a>
                     </div>
@@ -57,7 +65,16 @@
                     </c:choose>
                 </section>
                 <section class="form-card" id="carrinho">
-                    <div class="form-header"><h3>🛒 Carrinho da diária</h3></div>
+                    <div class="form-header">
+                        <h3 class="cart-heading">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 1.9-1.4L21 7H6" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                                <circle cx="10" cy="19" r="1.5" fill="currentColor"/>
+                                <circle cx="18" cy="19" r="1.5" fill="currentColor"/>
+                            </svg>
+                            Carrinho da diária
+                        </h3>
+                    </div>
                     <c:choose>
                         <c:when test="${not empty carrinhoServicos}">
                             <div class="table-wrap">

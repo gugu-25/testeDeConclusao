@@ -16,7 +16,16 @@
             <div class="content">
                 <div class="form-card">
                     <div class="form-header">
-                        <h3>Formulário de Cliente</h3>
+                        <div>
+                            <span class="eyebrow">Cadastro hoteleiro</span>
+                            <h3>Dados do Cliente</h3>
+                            <p>Preencha as informações para registrar o hóspede ou empresa.</p>
+                        </div>
+                        <span class="form-header-icon" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" focusable="false">
+                                <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="1.8"/>
+                            </svg>
+                        </span>
                     </div>
 
                     <form method="POST" action="gerenciar_cliente.do">
@@ -36,10 +45,23 @@
                                 <input type="text" name="nomeRazao" id="nomeRazao" value="${cliente.nomeRazao}" required/>
                             </div>
 
-                            <div class="form-group">
-                                <label for="documento">CPF ou CNPJ:</label>
-                                <input type="text" id="documento" name="documento" class="form-control" maxlength="18"
-                                     oninput="aplicarMascaraCpfCnpj(this)" required />
+                            <div class="form-row document-row">
+                                <div class="form-field">
+                                    <label for="documento">CPF ou CNPJ</label>
+                                    <input type="text" id="documento" name="cpfCnpj" maxlength="18"
+                                           value="${cliente.cpfCnpj}"
+                                           oninput="aplicarMascaraCpfCnpj(this)" required />
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="rgIe">RG/IE</label>
+                                    <input type="text" name="rgIe" id="rgIe" value="${cliente.rgIe}"/>
+                                </div>
+
+                                <div class="form-field">
+                                    <label for="dataNascAbertura">Data de Nascimento/Abertura</label>
+                                    <input type="date" name="dataNascAbertura" id="dataNascAbertura" value="${cliente.dataNascAbertura}"/>
+                                </div>
                             </div>
                             
                             <script>
@@ -63,17 +85,6 @@
                                 }
                             </script>
 
-
-                            <div class="form-field">
-                                <label for="rgIe">RG/IE</label>
-                                <input type="text" name="rgIe" id="rgIe" value="${cliente.rgIe}"/>
-                            </div>
-
-                            <div class="form-field">
-                                <label for="dataNascAbertura">Data de Nascimento/Abertura</label>
-                                <input type="date" name="dataNascAbertura" id="dataNascAbertura" value="${cliente.dataNascAbertura}"/>
-                            </div>
-
                             <div class="form-field">
                                 <label for="tipo">Tipo</label>
                                 <select name="tipo" id="tipo" required>
@@ -94,7 +105,9 @@
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-success">Cadastrar</button>
+                            <button type="submit" class="btn btn-success">
+                                ${cliente.idCliente > 0 ? 'Salvar alterações' : 'Cadastrar'}
+                            </button>
                             <a href="gerenciar_cliente.do?acao=listarTodos" class="btn btn-warning">Voltar</a>
                         </div>
                     </form>

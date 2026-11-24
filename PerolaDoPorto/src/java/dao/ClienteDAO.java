@@ -83,7 +83,11 @@ public class ClienteDAO extends DataBaseDAO {
                 pstm.setString(1, c.getNomeRazao());
                 pstm.setString(2, c.getCpfCnpj());
                 pstm.setString(3, c.getRgIe());
-                pstm.setDate(4, new Date(c.getDataNascAbertura().getTime()));
+                if (c.getDataNascAbertura() != null) {
+                    pstm.setDate(4, new Date(c.getDataNascAbertura().getTime()));
+                } else {
+                    pstm.setNull(4, java.sql.Types.DATE);
+                }
                 pstm.setInt(5, c.getTipo());
                 pstm.setInt(6, c.getStatus());
                 

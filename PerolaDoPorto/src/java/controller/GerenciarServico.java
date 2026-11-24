@@ -120,6 +120,31 @@ public class GerenciarServico extends HttpServlet {
         response.setContentType("text/html");
         ArrayList<String> erros = new ArrayList<String>();
         
+        String acao = request.getParameter("acao");
+        if ("excluir".equals(acao)) {
+            String idServicoStr = request.getParameter("idServico");
+            try {
+                int idServico = Integer.parseInt(idServicoStr);
+                if (idServico <= 0) {
+                    exibirMensagem("ID de Serviço inválido", false, "", response);
+                } else {
+                    ServicoDAO sDAO = new ServicoDAO();
+                    if (sDAO.excluir(idServico)) {
+                        exibirMensagem("Serviço excluído com sucesso", true,
+                                "gerenciar_servico.do?acao=listarTodos", response);
+                    } else {
+                        exibirMensagem("Não foi possível excluir o serviço. Se ele estiver vinculado a uma diária, o histórico foi preservado.", false, "", response);
+                    }
+                }
+            } catch (NumberFormatException e) {
+                exibirMensagem("ID de Serviço inválido", false, "", response);
+            } catch (ClassNotFoundException ex) {
+                Logger.getLogger(GerenciarServico.class.getName()).log(Level.SEVERE, null, ex);
+                exibirMensagem("Erro ao acessar o banco de dados", false, "", response);
+            }
+            return;
+        }
+
         String idServicoStr = request.getParameter("idServico");
         String nome = request.getParameter("nome");
         String valorStr = request.getParameter("valor");
@@ -193,22 +218,8 @@ public class GerenciarServico extends HttpServlet {
     private static void 
         exibirMensagem(String mensagem, boolean resposta,
                 String link, HttpServletResponse response) {
-            try {
-                PrintWriter out = response.getWriter();
-                out.println("<script src='js/app-dialog.js'></script>");
-                out.println("<script>");
-                out.println("appMessage('" + mensagem + "', {");
-                if (resposta) {
-                    out.println("type: 'success', redirect: '" + link + "'");
-                } else {
-                    out.println("type: 'error', back: true");
-                }
-                out.println("});");
-                out.println("</script>");
-                out.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        DialogoUtil.exibir(response, mensagem, resposta, link,
+                link == null || link.trim().isEmpty());
     }
 
     /**

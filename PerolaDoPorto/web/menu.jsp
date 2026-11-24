@@ -10,7 +10,6 @@
 <nav class="main-nav">
     <button type="button" class="menu-icon" onclick="toggleMenu()" aria-controls="nav-links" aria-label="Alternar menu">☰</button>
     <ul id="nav-links">
-        <li><a href="index.jsp">inicio</a></li>
         <c:if test="${ulogado!=null && ulogado.perfil!=null}">
             <c:forEach var="menu" items="${ulogado.perfil.menus.menusVinculados}">
                 <c:if test="${menu.exibir==1}">
@@ -27,6 +26,23 @@
             <c:if test="${ulogado!=null}">${ulogado.nome}</c:if>
            
         </span>
-        <a href="gerenciar_login.do" class="logout" onclick="return confirm('Tem certeza que deseja sair?');">Sair</a>
+        <a href="#" class="logout" onclick="confirmarSaida(event)">Sair</a>
     </div>
 </nav>
+<script>
+    function confirmarSaida(event) {
+        event.preventDefault();
+        appConfirm(
+            'Deseja encerrar sua sessão na Pérola do Porto?',
+            function () {
+                window.location.href = 'gerenciar_login.do';
+            },
+            {
+                title: 'Sair do sistema',
+                type: 'error',
+                confirmText: 'Sair',
+                cancelText: 'Continuar aqui'
+            }
+        );
+    }
+</script>

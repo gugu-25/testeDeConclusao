@@ -18,8 +18,10 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import model.Quarto;
 import model.QuartoDAO;
+import model.Usuario;
 
 /**
  *
@@ -77,6 +79,17 @@ public class GerenciarQuarto extends HttpServlet {
                 if (GerenciarLogin.verificarPermissao(request, response)) {
                     ArrayList<Quarto> listarTodos = new ArrayList<>();
                     listarTodos = qDAO.getLista();
+                    Usuario ulogado = (Usuario) request.getSession().getAttribute("ulogado");
+                    if (ulogado != null && ulogado.getPerfil() != null
+                            && "Auxiliar de limpeza".equals(ulogado.getPerfil().getNome())) {
+                        ArrayList<Quarto> servicosDeQuarto = new ArrayList<>();
+                        for (Quarto quarto : listarTodos) {
+                            if (quarto.getStatus() == 3) {
+                                servicosDeQuarto.add(quarto);
+                            }
+                        }
+                        listarTodos = servicosDeQuarto;
+                    }
                     RequestDispatcher disp = 
                             getServletContext().getRequestDispatcher("/listar_quarto.jsp");
                     request.setAttribute("listarTodos", listarTodos);
@@ -102,6 +115,13 @@ public class GerenciarQuarto extends HttpServlet {
                         q = qDAO.getCarregaPorID(idQuarto);
                         
                         if (q.getIdQuarto() > 0) {
+                            Usuario ulogado = (Usuario) request.getSession().getAttribute("ulogado");
+                            if (ulogado != null && ulogado.getPerfil() != null
+                                    && "Auxiliar de limpeza".equals(ulogado.getPerfil().getNome())
+                                    && q.getStatus() != 3) {
+                                exibirMensagem("Este quarto não está marcado para serviço de quarto.", false, "", response);
+                                return;
+                            }
                             carregarStatusQuartos(request, qDAO);
                             RequestDispatcher disp = 
                                     getServletContext().getRequestDispatcher("/form_quarto.jsp");
@@ -167,6 +187,38 @@ public class GerenciarQuarto extends HttpServlet {
         
         try {
             QuartoDAO qDAO = new QuartoDAO();
+
+            Usuario ulogado = (Usuario) request.getSession().getAttribute("ulogado");
+            if (ulogado != null && ulogado.getPerfil() != null
+                    && "Auxiliar de limpeza".equals(ulogado.getPerfil().getNome())) {
+                int idAuxiliar = 0;
+                try {
+                    idAuxiliar = Integer.parseInt(idQuartoStr);
+                } catch (NumberFormatException e) {
+                    exibirMensagem("ID de Quarto inválido", false, "", response);
+                    return;
+                }
+
+                Quarto quartoAtual = qDAO.getCarregaPorID(idAuxiliar);
+                if (quartoAtual.getIdQuarto() <= 0) {
+                    exibirMensagem("Quarto não encontrado", false, "", response);
+                    return;
+                }
+                if (quartoAtual.getStatus() != 3) {
+                    exibirMensagem("A auxiliar só pode concluir quartos marcados para serviço de quarto.", false, "", response);
+                    return;
+                }
+
+                quartoAtual.setStatus(1);
+                if (qDAO.gravar(quartoAtual)) {
+                    exibirMensagem("Serviço de quarto concluído. O quarto está disponível.", true,
+                            "gerenciar_quarto.do?acao=listarTodos", response);
+                } else {
+                    exibirMensagem("Erro ao concluir o serviço de quarto.", false, "", response);
+                }
+                return;
+            }
+
             int status = 0;
             int idQuarto = 0;
             int numero = 0;
@@ -279,22 +331,8 @@ public class GerenciarQuarto extends HttpServlet {
     private static void 
         exibirMensagem(String mensagem, boolean resposta,
                 String link, HttpServletResponse response) {
-            try {
-                PrintWriter out = response.getWriter();
-                out.println("<script src='js/app-dialog.js'></script>");
-                out.println("<script>");
-                out.println("appMessage('" + mensagem + "', {");
-                if (resposta) {
-                    out.println("type: 'success', redirect: '" + link + "'");
-                } else {
-                    out.println("type: 'error', back: true");
-                }
-                out.println("});");
-                out.println("</script>");
-                out.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+        DialogoUtil.exibir(response, mensagem, resposta, link,
+                link == null || link.trim().isEmpty());
     }
 
     /**

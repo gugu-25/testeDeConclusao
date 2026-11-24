@@ -37,6 +37,7 @@
                         </c:choose>
 
                         <div class="form-grid">
+                            <c:if test="${ulogado.perfil.nome!='Auxiliar de limpeza'}">
                             <div class="form-field full">
                                 <label for="tipo">Tipo do quarto</label>
                                 <select name="tipo" id="tipo" required>
@@ -56,14 +57,14 @@
                                         <c:when test="${quarto.tipo == 3}">Suítes: quartos com finais 15 a 20 em cada andar.</c:when>
                                         <c:otherwise>Escolha primeiro o tipo. Os quartos correspondentes aparecerão por andar.</c:otherwise>
                                     </c:choose>
-                                    Quartos ocupados ou em manutenção ficam identificados.
+                                    Quartos ocupados ou em serviço de quarto ficam identificados.
                                 </p>
                                 <input type="hidden" name="numero" id="numero" value="${quarto.numero}"/>
 
                                 <div class="room-legend" aria-label="Legenda de status">
                                     <span><i class="room-status-dot available"></i> Disponível</span>
                                     <span><i class="room-status-dot occupied"></i> Ocupado</span>
-                                    <span><i class="room-status-dot maintenance"></i> Manutenção</span>
+                                    <span><i class="room-status-dot maintenance"></i> Serviço de quarto</span>
                                 </div>
 
                                 <button type="button" class="room-map-toggle" id="room-map-toggle" aria-expanded="true" aria-controls="room-map-content" <c:if test="${quarto.numero == 0 or quarto.tipo == 0}">hidden</c:if>>
@@ -121,13 +122,13 @@
                                                         class="room-option<c:if test='${quartoSelecionado}'> selected</c:if><c:if test='${quartoOcupado}'> occupied</c:if><c:if test='${quartoManutencao}'> maintenance</c:if><c:if test='${quartoSelecionado and tipoDistribuido != quarto.tipo}'> legacy-room</c:if>"
                                                         data-room-number="${numeroQuarto}"
                                                         data-room-type="${tipoDoQuarto}"
-                                                        data-room-status="${quartoOcupado ? 'Ocupado' : quartoManutencao ? 'Em manutenção' : 'Disponível'}"
+                                                        data-room-status="${quartoOcupado ? 'Ocupado' : quartoManutencao ? 'Serviço de quarto' : 'Disponível'}"
                                                         aria-pressed="${quartoSelecionado}"
                                                         <c:if test="${quartoBloqueado}">disabled="disabled" aria-disabled="true"</c:if>>
                                                     <span class="room-option-icon" aria-hidden="true"></span>
                                                     <span>Quarto</span>
                                                     <strong>${numeroQuarto}</strong>
-                                                    <span class="room-option-status"><c:choose><c:when test="${quartoOcupado}">Ocupado</c:when><c:when test="${quartoManutencao}">Manutenção</c:when><c:otherwise>Disponível</c:otherwise></c:choose></span>
+                                                    <span class="room-option-status"><c:choose><c:when test="${quartoOcupado}">Ocupado</c:when><c:when test="${quartoManutencao}">Serviço de quarto</c:when><c:otherwise>Disponível</c:otherwise></c:choose></span>
                                                 </button>
                                             </c:forEach>
                                         </div>
@@ -145,7 +146,9 @@
                                     <span class="room-selection-error" id="room-selection-error" role="alert" hidden>Selecione um quarto para continuar.</span>
                                 </div>
                             </fieldset>
+                            </c:if>
 
+                            <c:if test="${ulogado.perfil.nome!='Auxiliar de limpeza'}">
                             <div class="form-field full">
                                 <label for="descricao">Descrição</label>
                                 <textarea name="descricao" id="descricao" required>${quarto.descricao}</textarea>
@@ -155,20 +158,33 @@
                                 <label for="valor">Valor da Diária</label>
                                 <input type="number" min="0" step="0.01" name="valor" id="valor" value="${quarto.valor}" required/>
                             </div>
+                            </c:if>
 
                             <div class="form-field">
                                 <label for="status">Status</label>
                                 <select name="status" id="status" required>
-                                    <option value="">Selecione</option>
-                                    <option value="1" <c:if test="${quarto.status==1}">selected</c:if>>Disponível</option>
-                                    <option value="2" <c:if test="${quarto.status==2}">selected</c:if>>Ocupado</option>
-                                    <option value="3" <c:if test="${quarto.status==3}">selected</c:if>>Manutenção</option>
+                                    <c:choose>
+                                        <c:when test="${ulogado.perfil.nome=='Auxiliar de limpeza'}">
+                                            <option value="1" selected>Disponível</option>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <option value="">Selecione</option>
+                                            <option value="1" <c:if test="${quarto.status==1}">selected</c:if>>Disponível</option>
+                                            <option value="2" <c:if test="${quarto.status==2}">selected</c:if>>Ocupado</option>
+                                            <option value="3" <c:if test="${quarto.status==3}">selected</c:if>>Serviço de quarto</option>
+                                        </c:otherwise>
+                                    </c:choose>
                                 </select>
                             </div>
                         </div>
 
                         <div class="form-actions">
-                            <button type="submit" class="btn btn-success">Gravar</button>
+                            <button type="submit" class="btn btn-success">
+                                <c:choose>
+                                    <c:when test="${ulogado.perfil.nome=='Auxiliar de limpeza'}">Concluir serviço de quarto</c:when>
+                                    <c:otherwise>Gravar</c:otherwise>
+                                </c:choose>
+                            </button>
                             <a href="gerenciar_quarto.do?acao=listarTodos" class="btn btn-warning">Voltar</a>
                         </div>
                     </form>
@@ -243,7 +259,7 @@
 
                     mapContent.hidden = !selectedType;
                     pickerHint.textContent = selectedType
-                            ? typeNames[selectedType] + ": quartos com " + typeRanges[selectedType] + " em cada andar. Quartos ocupados ou em manutenção ficam identificados."
+                            ? typeNames[selectedType] + ": quartos com " + typeRanges[selectedType] + " em cada andar. Quartos ocupados ou em serviço de quarto ficam identificados."
                             : "Escolha primeiro o tipo. Os quartos correspondentes aparecerão por andar.";
 
                     if (selectedType && selectedRoom) {

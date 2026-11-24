@@ -240,23 +240,8 @@ public class GerenciarPendencias extends HttpServlet {
 
     private static void exibirMensagem(String mensagem, boolean resposta,
                 String link, HttpServletResponse response) {
-        try {
-            response.setContentType("text/html;charset=UTF-8");
-            PrintWriter out = response.getWriter();
-            out.println("<script src='js/app-dialog.js'></script>");
-            out.println("<script>");
-            out.println("appMessage('" + mensagem + "', {");
-            if (resposta) {
-                out.println("type: 'success', redirect: '" + link + "'");
-            } else {
-                out.println("type: 'error', back: true");
-            }
-            out.println("});");
-            out.println("</script>");
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        DialogoUtil.exibir(response, mensagem, resposta, link,
+                link == null || link.trim().isEmpty());
     }
 
     @Override

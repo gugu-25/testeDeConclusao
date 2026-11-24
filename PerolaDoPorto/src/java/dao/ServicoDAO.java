@@ -112,5 +112,25 @@ public class ServicoDAO extends DataBaseDAO {
         }
         return sucesso;
     }
+
+    public boolean excluir(int idServico) {
+        boolean sucesso = false;
+        String sql = "DELETE FROM servico WHERE idServico=? "
+                + "AND NOT EXISTS (SELECT 1 FROM diaria_quarto_servico "
+                + "WHERE servico_idServico=?)";
+        try {
+            this.conectar();
+            try (PreparedStatement pstm = conn.prepareStatement(sql)) {
+                pstm.setInt(1, idServico);
+                pstm.setInt(2, idServico);
+                sucesso = pstm.executeUpdate() > 0;
+            }
+        } catch (SQLException e) {
+            Logger.getLogger(ServicoDAO.class.getName()).log(Level.SEVERE, null, e);
+        } finally {
+            this.desconectar();
+        }
+        return sucesso;
+    }
     
 }

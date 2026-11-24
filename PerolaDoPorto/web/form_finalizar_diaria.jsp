@@ -30,7 +30,7 @@
                             </div>
                             <div class="form-field">
                                 <label for="valorTotal">Valor total</label>
-                                <input type="number" id="valorTotal" name="valorTotal" min="0" step="0.01" value="${sessionScope.diaria.valorTotal}" required>
+                                <input type="number" id="valorTotal" name="valorTotal" min="0" step="0.01" value="${sessionScope.diaria.valorTotal}" readonly required>
                             </div>
                             <div class="form-field">
                                 <label for="statusHospedagem">Status da hospedagem</label>
@@ -57,6 +57,35 @@
                                 <input type="date" id="pagoEm" name="pagoEm" value="${pagoEmFormatado}">
                             </div>
                         </div>
+                        <section class="stay-summary" aria-labelledby="stay-summary-title">
+                            <div class="stay-summary-heading">
+                                <div>
+                                    <span class="eyebrow">Resumo da reserva</span>
+                                    <h3 id="stay-summary-title">Valor da hospedagem</h3>
+                                </div>
+                                <strong id="stay-summary-total" class="stay-summary-total">R$ 0,00</strong>
+                            </div>
+                            <div class="stay-summary-rooms" id="stay-summary-rooms">
+                                <c:choose>
+                                    <c:when test="${not empty sessionScope.diaria.carrinhoQuarto}">
+                                        <c:forEach var="item" items="${sessionScope.diaria.carrinhoQuarto}">
+                                            <fmt:formatDate value="${item.checkIn}" pattern="yyyy-MM-dd" var="checkInResumo"/>
+                                            <fmt:formatDate value="${item.checkOut}" pattern="yyyy-MM-dd" var="checkOutResumo"/>
+                                            <div class="stay-summary-room"
+                                                 data-check-in="${checkInResumo}"
+                                                 data-check-out="${checkOutResumo}">
+                                                <span>Quarto ${item.quarto.numero}</span>
+                                                <small>${checkInResumo} — ${checkOutResumo}</small>
+                                                <strong class="stay-room-subtotal">R$ 0,00</strong>
+                                            </div>
+                                        </c:forEach>
+                                    </c:when>
+                                    <c:otherwise>
+                                        <p class="stay-summary-empty">Nenhum quarto vinculado a esta diária.</p>
+                                    </c:otherwise>
+                                </c:choose>
+                            </div>
+                        </section>
                         <div class="form-actions">
                             <button type="submit" class="btn btn-success"><c:choose><c:when test="${sessionScope.diaria.idDiaria > 0}">Salvar alterações</c:when><c:otherwise>Gravar diária</c:otherwise></c:choose></button>
                             <c:choose>
@@ -76,6 +105,79 @@
             function toggleMenu() {
                 document.getElementById("nav-links").classList.toggle("show");
             }
+
+            (function () {
+                var valorDiariaInput = document.getElementById("valorDiaria");
+                var valorTotalInput = document.getElementById("valorTotal");
+                var totalLabel = document.getElementById("stay-summary-total");
+                var roomRows = document.querySelectorAll(".stay-summary-room");
+
+                function parseDateLocal(valor) {
+                    if (!valor) {
+                        return null;
+                    }
+                    var partes = valor.split("-");
+                    if (partes.length !== 3) {
+                        return null;
+                    }
+                    return new Date(
+                        parseInt(partes[0], 10),
+                        parseInt(partes[1], 10) - 1,
+                        parseInt(partes[2], 10)
+                    );
+                }
+
+                function calcularNoites(checkIn, checkOut) {
+                    var entrada = parseDateLocal(checkIn);
+                    var saida = parseDateLocal(checkOut);
+                    if (!entrada || !saida) {
+                        return 0;
+                    }
+                    var diferenca = saida.getTime() - entrada.getTime();
+                    return Math.max(0, Math.round(diferenca / 86400000));
+                }
+
+                function formatarMoeda(valor) {
+                    return valor.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL"
+                    });
+                }
+
+                function atualizarResumo() {
+                    var diaria = parseFloat(
+                        String(valorDiariaInput.value || "0").replace(",", ".")
+                    );
+                    if (!isFinite(diaria) || diaria < 0) {
+                        diaria = 0;
+                    }
+
+                    var total = 0;
+
+                    roomRows.forEach(function (row) {
+                        var noites = calcularNoites(
+                            row.getAttribute("data-check-in"),
+                            row.getAttribute("data-check-out")
+                        );
+                        var subtotal = diaria * noites;
+                        total += subtotal;
+
+                        var subtotalLabel = row.querySelector(".stay-room-subtotal");
+                        if (subtotalLabel) {
+                            subtotalLabel.textContent =
+                                formatarMoeda(subtotal) +
+                                " · " + noites + (noites === 1 ? " diária" : " diárias");
+                        }
+                    });
+
+                    valorTotalInput.value = total.toFixed(2);
+                    totalLabel.textContent = formatarMoeda(total);
+                }
+
+                valorDiariaInput.addEventListener("input", atualizarResumo);
+                valorDiariaInput.addEventListener("change", atualizarResumo);
+                atualizarResumo();
+            }());
         </script>
     </body>
 </html>

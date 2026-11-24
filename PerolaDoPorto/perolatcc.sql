@@ -322,6 +322,7 @@ FROM (
     UNION ALL SELECT 'Cadastrar serviço', 'gerenciar_servico.do?acao=cadastrar', NULL, 0
     UNION ALL SELECT 'Alterar serviço', 'gerenciar_servico.do?acao=alterar', NULL, 0
     UNION ALL SELECT 'Desativar serviço', 'gerenciar_servico.do?acao=desativar', NULL, 0
+    UNION ALL SELECT 'Excluir serviço', 'gerenciar_servico.do?acao=excluir', NULL, 0
     UNION ALL SELECT 'Criar diária', 'gerenciar_diaria.do?acao=novaDiaria', NULL, 0
     UNION ALL SELECT 'Gravar diária', 'gerenciar_diaria.do?acao=gravar', NULL, 0
     UNION ALL SELECT 'Alterar diária', 'gerenciar_diaria.do?acao=alterar', NULL, 0
@@ -396,6 +397,7 @@ WHERE m.`link` IN (
     'gerenciar_servico.do?acao=cadastrar',
     'gerenciar_servico.do?acao=alterar',
     'gerenciar_servico.do?acao=desativar',
+    'gerenciar_servico.do?acao=excluir',
     'gerenciar_usuario.do?acao=listarTodos',
     'gerenciar_diaria.do?acao=listarTodos',
     'gerenciar_diaria_quarto.do?acao=gerenciar',
@@ -433,6 +435,7 @@ WHERE m.`link` IN (
     'gerenciar_servico.do?acao=cadastrar',
     'gerenciar_servico.do?acao=alterar',
     'gerenciar_servico.do?acao=desativar',
+    'gerenciar_servico.do?acao=excluir',
     'gerenciar_usuario.do?acao=listarTodos',
     'gerenciar_usuario.do?acao=cadastrar',
     'gerenciar_usuario.do?acao=alterar',
@@ -484,6 +487,7 @@ WHERE m.`link` IN (
     'gerenciar_servico.do?acao=cadastrar',
     'gerenciar_servico.do?acao=alterar',
     'gerenciar_servico.do?acao=desativar',
+    'gerenciar_servico.do?acao=excluir',
     'gerenciar_usuario.do?acao=listarTodos',
     'gerenciar_usuario.do?acao=cadastrar',
     'gerenciar_usuario.do?acao=alterar',

@@ -44,7 +44,7 @@
                                             <td>${p.descricao}</td>
                                             <td><fmt:formatNumber value="${p.valor}" type="currency" currencySymbol="R$ " /></td>
                                             <td><fmt:formatDate value="${p.dataRegistro}" pattern="dd/MM/yyyy" /></td>
-                                            <td><c:out value="${p.diariaQuartoServico.diaria.cliente.nomeRazao}"/> / diária ${p.diariaQuartoServico.diaria.idDiaria}</td>
+                                            <td><c:out value="${p.diariaQuartoServico.diariaQuarto.diaria.cliente.nomeRazao}"/> / diária ${p.diariaQuartoServico.diariaQuarto.diaria.idDiaria}</td>
                                             <td><c:choose><c:when test="${p.diariaQuartoServico.diariaQuarto.quarto.numero > 0}">Quarto ${p.diariaQuartoServico.diariaQuarto.quarto.numero}</c:when><c:otherwise>—</c:otherwise></c:choose></td>
                                             <td><c:out value="${p.diariaQuartoServico.servico.nome}"/></td>
                                             <td>

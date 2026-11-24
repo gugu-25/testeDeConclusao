@@ -13,6 +13,15 @@
             return;
         }
 
+        if (!document.body) {
+            var bodyElement = document.createElement("body");
+            if (document.documentElement) {
+                document.documentElement.appendChild(bodyElement);
+            } else {
+                return;
+            }
+        }
+
         dialogElement = document.createElement("div");
         dialogElement.className = "app-dialog-backdrop";
         dialogElement.setAttribute("aria-hidden", "true");
@@ -37,6 +46,13 @@
     function openDialog(message, options) {
         createDialog();
 
+        var meaningfulContent = document.querySelector(
+            ".page-shell, .auth-shell, .form-card, .content, main"
+        );
+        if (!meaningfulContent) {
+            document.body.classList.add("app-dialog-standalone");
+        }
+
         var dialog = dialogElement.querySelector(".app-dialog");
         var icon = dialogElement.querySelector(".app-dialog-icon");
         var title = dialogElement.querySelector("#app-dialog-title");
@@ -59,7 +75,10 @@
 
             var confirmButton = document.createElement("button");
             confirmButton.type = "button";
-            confirmButton.className = "app-dialog-button app-dialog-button-primary";
+            confirmButton.className = "app-dialog-button " +
+                (options.type === "error"
+                    ? "app-dialog-button-danger"
+                    : "app-dialog-button-primary");
             confirmButton.textContent = options.confirmText || "Confirmar";
 
             cancelButton.addEventListener("click", closeDialog);
@@ -90,6 +109,7 @@
 
         dialogElement.classList.add("is-open");
         dialogElement.setAttribute("aria-hidden", "false");
+        document.body.classList.add("has-app-dialog");
         var focusedButton = actions.querySelector("button");
         if (focusedButton) {
             focusedButton.focus();
@@ -106,4 +126,80 @@
         dialogOptions.onConfirm = onConfirm;
         openDialog(message, dialogOptions);
     };
+
+    document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape" && dialogElement
+                && dialogElement.classList.contains("is-open")) {
+            closeDialog();
+        }
+    });
+
+    document.addEventListener("click", function (event) {
+        if (event.target === dialogElement) {
+            closeDialog();
+        }
+    });
+
+    function iniciarInteracoesGlobais() {
+        var caminhoAtual = window.location.pathname.split("/").pop();
+
+        document.querySelectorAll(".main-nav a[href]").forEach(function (link) {
+            var destino = link.getAttribute("href").split("?")[0];
+            var destinoEhPaginaAtual =
+                destino === caminhoAtual ||
+                (destino.indexOf("gerenciar_cliente.do") === 0 &&
+                    (caminhoAtual.indexOf("cliente") !== -1)) ||
+                (destino.indexOf("gerenciar_quarto.do") === 0 &&
+                    (caminhoAtual.indexOf("quarto") !== -1)) ||
+                (destino.indexOf("gerenciar_servico.do") === 0 &&
+                    (caminhoAtual.indexOf("servico") !== -1)) ||
+                (destino.indexOf("gerenciar_diaria.do") === 0 &&
+                    (caminhoAtual.indexOf("diaria") !== -1)) ||
+                (destino.indexOf("gerenciar_pendencias.do") === 0 &&
+                    (caminhoAtual.indexOf("pendencias") !== -1)) ||
+                (destino.indexOf("gerenciar_usuario.do") === 0 &&
+                    (caminhoAtual.indexOf("usuario") !== -1)) ||
+                (destino.indexOf("gerenciar_perfil.do") === 0 &&
+                    (caminhoAtual.indexOf("perfil") !== -1)) ||
+                (destino.indexOf("gerenciar_menu.do") === 0 &&
+                    (caminhoAtual.indexOf("menu") !== -1));
+
+            if (destinoEhPaginaAtual) {
+                link.classList.add("active");
+                link.setAttribute("aria-current", "page");
+            }
+        });
+
+        document.querySelectorAll(".btn").forEach(function (botao) {
+            botao.addEventListener("pointerdown", function (event) {
+                var retangulo = botao.getBoundingClientRect();
+                botao.style.setProperty("--ripple-x", (event.clientX - retangulo.left) + "px");
+                botao.style.setProperty("--ripple-y", (event.clientY - retangulo.top) + "px");
+                botao.classList.remove("is-rippling");
+                void botao.offsetWidth;
+                botao.classList.add("is-rippling");
+            });
+        });
+
+        var campos = document.querySelectorAll(
+            "input:not([type='hidden']), select, textarea"
+        );
+        campos.forEach(function (campo) {
+            campo.addEventListener("invalid", function () {
+                campo.classList.add("campo-invalido");
+            });
+            campo.addEventListener("input", function () {
+                campo.classList.remove("campo-invalido");
+            });
+            campo.addEventListener("change", function () {
+                campo.classList.remove("campo-invalido");
+            });
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", iniciarInteracoesGlobais);
+    } else {
+        iniciarInteracoesGlobais();
+    }
 })();
